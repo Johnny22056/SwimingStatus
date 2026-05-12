@@ -4,9 +4,7 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from PIL import Image
-import streamlit as st
+from typing import Any, Optional, Tuple
 
 from src.config import SCREENSHOTS_DIR, SCREENSHOT_INDEX_FILE
 from src.storage import ScreenshotIndex
@@ -170,81 +168,4 @@ class ScreenshotManager:
 
         return True, str(target_path)
 
-    @classmethod
-    def list_screenshots(cls) -> List[Dict[str, Any]]:
-        """List all screenshots with metadata from the index.
 
-        Returns:
-            List of screenshot metadata dicts.
-        """
-        return ScreenshotIndex.list_all()
-
-    @classmethod
-    def get_screenshot_thumbnail(cls, screenshot_path: str, size: Tuple[int, int] = (200, 200)) -> Optional[Image.Image]:
-        """Get a resized thumbnail for a screenshot.
-
-        Args:
-            screenshot_path: Relative path under SCREENSHOTS_DIR.
-            size: Maximum (width, height) for the thumbnail.
-
-        Returns:
-            PIL Image thumbnail, or None if the file is missing or unreadable.
-        """
-        full_path = SCREENSHOTS_DIR / screenshot_path
-        if not full_path.exists():
-            return None
-        try:
-            img = Image.open(full_path)
-            img.thumbnail(size)
-            return img
-        except Exception:
-            return None
-
-    @classmethod
-    def delete_screenshot(cls, screenshot_path: str) -> Tuple[bool, str]:
-        """Delete a screenshot file and its index entry, cleaning up empty dirs.
-
-        Args:
-            screenshot_path: Relative path under SCREENSHOTS_DIR.
-
-        Returns:
-            Tuple of (success, message).
-        """
-        full_path = SCREENSHOTS_DIR / screenshot_path
-        
-        # Remove from filesystem
-        if full_path.exists():
-            full_path.unlink()
-        
-        # Remove from index
-        removed = ScreenshotIndex.remove_by_path(screenshot_path)
-        
-        # Clean up empty directories
-        cls._cleanup_empty_dirs(full_path.parent)
-        
-        if removed:
-            return True, f"Deleted screenshot: {screenshot_path}"
-        return False, f"Screenshot not found in index: {screenshot_path}"
-
-    @staticmethod
-    def _cleanup_empty_dirs(directory: Path) -> None:
-        """Remove empty directories upward from *directory* to SCREENSHOTS_DIR.
-
-        Stops at SCREENSHOTS_DIR or on the first non-empty / OSError directory.
-        """
-        while directory != SCREENSHOTS_DIR and directory.is_relative_to(SCREENSHOTS_DIR):
-            try:
-                if directory.exists() and not any(directory.iterdir()):
-                    directory.rmdir()
-                directory = directory.parent
-            except OSError:
-                break
-
-    @classmethod
-    def get_screenshot_count(cls) -> int:
-        """Get total number of stored screenshots.
-
-        Returns:
-            Count of indexed screenshots.
-        """
-        return len(ScreenshotIndex.list_all())

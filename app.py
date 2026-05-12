@@ -62,7 +62,6 @@ from src.screenshot_manager import ScreenshotManager
 from src.ocr_service import OCRService
 from src.validation import validate_swim_event_data, validate_field_types, validate_body_metrics, time_to_seconds
 from src.analytics import PerformanceAnalytics
-from src.research_service import ResearchService
 from src.insights import InsightGenerator
 from src.qa_service import QAService
 

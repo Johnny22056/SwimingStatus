@@ -55,13 +55,11 @@ src/
   models.py               # Data models (SwimEvent, BodyMetrics)
   ocr_service.py          # OCR extraction via Qwen VL
   qa_service.py           # Q&A service via Qwen
-  research_service.py     # Web search and research comparison
   screenshot_manager.py   # Screenshot upload and organization
   storage.py              # JSON-based data persistence
   validation.py           # Data validation and time parsing
 data/
   swim_events.json        # Extracted swim records
   body_metrics.json       # Body measurement history
-  research_cache.json     # Cached research results
   screenshots/            # Organized screenshot images
 ```

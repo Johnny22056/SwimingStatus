@@ -22,7 +22,6 @@ EXTRACTED_DIR = DATA_DIR / "extracted"
 BODY_METRICS_FILE = DATA_DIR / "body_metrics.json"
 SWIM_EVENTS_FILE = DATA_DIR / "swim_events.json"
 SCREENSHOT_INDEX_FILE = SCREENSHOTS_DIR / "index.json"
-RESEARCH_CACHE_FILE = DATA_DIR / "research_cache.json"
 
 # Ensure directories exist
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
