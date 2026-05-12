@@ -2,7 +2,7 @@
 import json
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 import streamlit as st
@@ -12,6 +12,50 @@ import plotly.express as px
 logger = logging.getLogger(__name__)
 
 from src.config import SCREENSHOTS_DIR, DATA_DIR
+
+BIRTHDAY = date(2011, 8, 6)  # Meng Han Zhou's birthday
+
+# Chinese Female National Swimming Standards (Effective 2025-01-01)
+LC_STANDARDS = [
+    {"Event": "50m Freestyle", "International Master": "24.70", "National Master": "25.85", "Level 1": "27.20", "Level 2": "31.50"},
+    {"Event": "100m Freestyle", "International Master": "53.61", "National Master": "56.30", "Level 1": "1:02.50", "Level 2": "1:13.00"},
+    {"Event": "200m Freestyle", "International Master": "1:57.26", "National Master": "2:01.20", "Level 1": "2:15.00", "Level 2": "2:39.00"},
+    {"Event": "400m Freestyle", "International Master": "4:07.90", "National Master": "4:15.80", "Level 1": "4:44.00", "Level 2": "5:40.00"},
+    {"Event": "800m Freestyle", "International Master": "8:29.17", "National Master": "8:53.40", "Level 1": "9:42.00", "Level 2": "10:57.00"},
+    {"Event": "1500m Freestyle", "International Master": "16:09.09", "National Master": "17:14.00", "Level 1": "18:35.00", "Level 2": "20:49.00"},
+    {"Event": "50m Backstroke", "International Master": "28.22", "National Master": "30.55", "Level 1": "33.00", "Level 2": "38.50"},
+    {"Event": "100m Backstroke", "International Master": "59.99", "National Master": "1:04.30", "Level 1": "1:09.00", "Level 2": "1:21.00"},
+    {"Event": "200m Backstroke", "International Master": "2:10.39", "National Master": "2:18.30", "Level 1": "2:29.50", "Level 2": "2:53.00"},
+    {"Event": "50m Breaststroke", "International Master": "31.02", "National Master": "31.70", "Level 1": "36.00", "Level 2": "41.00"},
+    {"Event": "100m Breaststroke", "International Master": "1:06.79", "National Master": "1:10.75", "Level 1": "1:18.00", "Level 2": "1:27.00"},
+    {"Event": "200m Breaststroke", "International Master": "2:23.91", "National Master": "2:36.60", "Level 1": "2:51.00", "Level 2": "3:13.00"},
+    {"Event": "50m Butterfly", "International Master": "26.32", "National Master": "27.50", "Level 1": "30.50", "Level 2": "36.50"},
+    {"Event": "100m Butterfly", "International Master": "57.92", "National Master": "1:00.50", "Level 1": "1:08.00", "Level 2": "1:20.00"},
+    {"Event": "200m Butterfly", "International Master": "2:08.85", "National Master": "2:14.20", "Level 1": "2:25.00", "Level 2": "2:54.50"},
+    {"Event": "200m IM", "International Master": "2:11.47", "National Master": "2:18.40", "Level 1": "2:30.00", "Level 2": "2:58.00"},
+    {"Event": "400m IM", "International Master": "4:38.53", "National Master": "4:56.80", "Level 1": "5:18.00", "Level 2": "6:21.00"},
+]
+
+SC_STANDARDS = [
+    {"Event": "50m Freestyle", "International Master": "24.44", "National Master": "25.00", "Level 1": "26.40", "Level 2": "30.50"},
+    {"Event": "100m Freestyle", "International Master": "52.85", "National Master": "54.70", "Level 1": "1:00.50", "Level 2": "1:11.00"},
+    {"Event": "200m Freestyle", "International Master": "1:55.60", "National Master": "1:58.50", "Level 1": "2:12.00", "Level 2": "2:35.00"},
+    {"Event": "400m Freestyle", "International Master": "4:06.95", "National Master": "4:11.40", "Level 1": "4:39.00", "Level 2": "5:35.00"},
+    {"Event": "800m Freestyle", "International Master": "8:26.71", "National Master": "8:45.20", "Level 1": "9:33.00", "Level 2": "10:47.00"},
+    {"Event": "1500m Freestyle", "International Master": "16:15.27", "National Master": "17:00.50", "Level 1": "18:20.00", "Level 2": "20:32.00"},
+    {"Event": "50m Backstroke", "International Master": "26.54", "National Master": "28.70", "Level 1": "31.00", "Level 2": "36.20"},
+    {"Event": "100m Backstroke", "International Master": "58.08", "National Master": "1:01.55", "Level 1": "1:06.00", "Level 2": "1:17.50"},
+    {"Event": "200m Backstroke", "International Master": "2:05.54", "National Master": "2:13.60", "Level 1": "2:24.50", "Level 2": "2:47.00"},
+    {"Event": "50m Breaststroke", "International Master": "30.45", "National Master": "30.85", "Level 1": "34.70", "Level 2": "40.00"},
+    {"Event": "100m Breaststroke", "International Master": "1:05.28", "National Master": "1:08.75", "Level 1": "1:15.80", "Level 2": "1:24.50"},
+    {"Event": "200m Breaststroke", "International Master": "2:23.38", "National Master": "2:33.60", "Level 1": "2:47.00", "Level 2": "3:08.80"},
+    {"Event": "50m Butterfly", "International Master": "25.82", "National Master": "27.40", "Level 1": "30.40", "Level 2": "36.40"},
+    {"Event": "100m Butterfly", "International Master": "57.40", "National Master": "59.00", "Level 1": "1:06.00", "Level 2": "1:18.00"},
+    {"Event": "200m Butterfly", "International Master": "2:08.45", "National Master": "2:11.20", "Level 1": "2:22.00", "Level 2": "2:51.30"},
+    {"Event": "100m IM", "International Master": "59.65", "National Master": "1:02.50", "Level 1": "1:07.40", "Level 2": "1:20.00"},
+    {"Event": "200m IM", "International Master": "2:10.16", "National Master": "2:13.70", "Level 1": "2:25.00", "Level 2": "2:52.00"},
+    {"Event": "400m IM", "International Master": "4:37.54", "National Master": "4:49.80", "Level 1": "5:10.00", "Level 2": "6:11.00"},
+]
 from src.models import SwimEvent, BodyMetrics
 from src.storage import DataStore, ScreenshotIndex
 from src.screenshot_manager import ScreenshotManager
@@ -30,9 +74,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Hide Streamlit default menu and deploy button
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+.stDeployButton {display: none;}
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize session state
 if "page" not in st.session_state:
-    st.session_state.page = "Upload"
+    st.session_state.page = "Import"
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "last_extraction" not in st.session_state:
@@ -42,6 +94,14 @@ if "qa_service" not in st.session_state:
 else:
     # Re-sync conversation history on reruns so QAService uses session state as source of truth
     st.session_state.qa_service.conversation_history = st.session_state.chat_history
+if "upload_success_count" not in st.session_state:
+    st.session_state.upload_success_count = 0
+if "upload_failed_count" not in st.session_state:
+    st.session_state.upload_failed_count = 0
+if "upload_duplicate_count" not in st.session_state:
+    st.session_state.upload_duplicate_count = 0
+if "upload_new_count" not in st.session_state:
+    st.session_state.upload_new_count = 0
 
 
 def switch_page(page_name: str):
@@ -54,7 +114,7 @@ with st.sidebar:
     st.title("🏊 Sunny's Swimming")
     st.markdown("---")
     
-    pages = ["Upload", "Batch Process", "Records", "Gallery", "Body Metrics", "Analytics", "Research", "Insights", "Q&A"]
+    pages = ["Import", "Records", "Body Metrics", "National Standard", "Analytics", "Insights", "Q&A"]
     for page in pages:
         if st.button(page, use_container_width=True, 
                      type="primary" if st.session_state.page == page else "secondary"):
@@ -64,14 +124,29 @@ with st.sidebar:
     st.caption("Data-driven swimming development")
 
 
-# ==================== UPLOAD PAGE ====================
-if st.session_state.page == "Upload":
-    st.title("📤 Upload Screenshots")
-    st.markdown("Upload swimming meet screenshots to extract and analyze data.")
+# ==================== IMPORT PAGE ====================
+if st.session_state.page == "Import":
+    st.header("📥 Import Screenshots")
+    st.markdown("Upload or batch-import swimming meet screenshots to extract and analyze data.")
     
-    col1, col2 = st.columns(2)
+    # Quick Stats at the top
+    uc1, uc2, uc3, uc4 = st.columns(4)
+    uc1.metric("Uploaded", st.session_state.upload_new_count)
+    uc2.metric("Success", st.session_state.upload_success_count)
+    uc3.metric("Failed", st.session_state.upload_failed_count)
+    uc4.metric("Duplicates", st.session_state.upload_duplicate_count)
+    if st.button("Reset Stats", key="reset_upload_stats"):
+        st.session_state.upload_success_count = 0
+        st.session_state.upload_failed_count = 0
+        st.session_state.upload_duplicate_count = 0
+        st.session_state.upload_new_count = 0
+        st.rerun()
     
-    with col1:
+    st.markdown("---")
+    
+    tab1, tab2, tab3 = st.tabs(["Single Screenshot", "Batch Import", "Import from Excel"])
+    
+    with tab1:
         st.subheader("Upload New Screenshot")
         meet_name = st.text_input("Meet Name", value="Swim Meet")
         event_date = st.date_input("Event Date", value=datetime.now())
@@ -90,6 +165,7 @@ if st.session_state.page == "Upload":
                 msg = str(e)
             
             if success:
+                st.session_state.upload_new_count += 1
                 st.success(msg)
                 
                 # Auto-extract with OCR
@@ -137,9 +213,11 @@ if st.session_state.page == "Upload":
                             st.error(f"Validation error: {err}")
                     else:
                         DataStore.add_swim_event(event)
+                        st.session_state.upload_success_count += 1
                         st.success("Event saved successfully!")
                 else:
                     st.warning(f"Extraction had issues: {extract_msg}")
+                    st.session_state.upload_failed_count += 1
                     st.session_state.last_extraction = data
                     
                     # Show raw model response for debugging
@@ -216,215 +294,242 @@ if st.session_state.page == "Upload":
                                         st.error(f"Validation error: {err}")
                                 else:
                                     DataStore.add_swim_event(event)
+                                    st.session_state.upload_success_count += 1
                                     st.success("Event saved successfully!")
                                     st.session_state.last_extraction = None
                                     st.rerun()
             else:
+                if "duplicate" in msg.lower():
+                    st.session_state.upload_duplicate_count += 1
                 st.error(msg)
     
-    with col2:
-        st.subheader("Quick Stats")
-        summary = PerformanceAnalytics.get_dashboard_summary()
-        st.metric("Total Meets", summary["total_meets"])
-        st.metric("Total Events", summary["total_events"])
-        st.metric("Personal Bests", summary["personal_bests"])
-        st.metric("Screenshots", ScreenshotManager.get_screenshot_count())
-
-
-# ==================== BATCH PROCESS PAGE ====================
-elif st.session_state.page == "Batch Process":
-    st.header("📂 Batch Process Screenshots")
-    
-    # Initialize state
-    if "batch_folder_path" not in st.session_state:
-        st.session_state.batch_folder_path = ""
-    
-    st.write("Select a folder containing swim meet screenshots to process them all at once.")
-    
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        if st.button("📁 Browse Folder", type="primary"):
-            import subprocess
-            result = subprocess.run(
-                [sys.executable, str(Path(__file__).parent / "src" / "folder_dialog.py"), str(SCREENSHOTS_DIR)],
-                capture_output=True, text=True, timeout=120
+    with tab2:
+        # Initialize state
+        if "batch_folder_path" not in st.session_state:
+            st.session_state.batch_folder_path = ""
+        
+        st.write("Select a folder containing swim meet screenshots to process them all at once.")
+        
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            if st.button("📁 Browse Folder", type="primary"):
+                import subprocess
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).parent / "src" / "folder_dialog.py"), str(SCREENSHOTS_DIR)],
+                    capture_output=True, text=True, timeout=120
+                )
+                folder_selected = result.stdout.strip()
+                if folder_selected:
+                    st.session_state.batch_folder_path = folder_selected
+                    st.rerun()
+        
+        with col2:
+            # Also allow manual path entry as fallback
+            manual_path = st.text_input(
+                "Or enter path manually",
+                value=st.session_state.batch_folder_path,
+                placeholder="/path/to/screenshots",
+                label_visibility="collapsed"
             )
-            folder_selected = result.stdout.strip()
-            if folder_selected:
-                st.session_state.batch_folder_path = folder_selected
-                st.rerun()
-    
-    with col2:
-        # Also allow manual path entry as fallback
-        manual_path = st.text_input(
-            "Or enter path manually",
-            value=st.session_state.batch_folder_path,
-            placeholder="/path/to/screenshots",
-            label_visibility="collapsed"
-        )
-        if manual_path != st.session_state.batch_folder_path:
-            st.session_state.batch_folder_path = manual_path
-    
-    # Show selected folder info
-    if st.session_state.batch_folder_path:
-        folder = Path(st.session_state.batch_folder_path)
-        if folder.exists() and folder.is_dir():
-            # Count images
-            extensions = ["*.png", "*.jpg", "*.jpeg", "*.PNG", "*.JPG", "*.JPEG"]
-            image_files = []
-            for ext in extensions:
-                image_files.extend(folder.rglob(ext))
-            
-            st.success(f"Selected: **{folder}**")
-            st.write(f"Found **{len(image_files)}** image(s) in this folder and subfolders.")
-            
-            if len(image_files) > 0 and st.button("🚀 Process All Images", type="primary"):
-                st.info(f"Found {len(image_files)} image(s). Processing...")
+            if manual_path != st.session_state.batch_folder_path:
+                st.session_state.batch_folder_path = manual_path
+        
+        # Show selected folder info
+        if st.session_state.batch_folder_path:
+            folder = Path(st.session_state.batch_folder_path)
+            if folder.exists() and folder.is_dir():
+                # Count images
+                extensions = ["*.png", "*.jpg", "*.jpeg", "*.PNG", "*.JPG", "*.JPEG"]
+                image_files = []
+                for ext in extensions:
+                    image_files.extend(folder.rglob(ext))
                 
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+                st.success(f"Selected: **{folder}**")
+                st.write(f"Found **{len(image_files)}** image(s) in this folder and subfolders.")
                 
-                succeeded = []
-                skipped = []
-                failed = []
-                
-                ocr = OCRService()
-                
-                for i, img_path in enumerate(sorted(image_files)):
-                    progress_bar.progress((i + 1) / len(image_files))
-                    status_text.text(f"Processing {i+1}/{len(image_files)}: {img_path.name}")
+                if len(image_files) > 0 and st.button("🚀 Process All Images", type="primary"):
+                    st.info(f"Found {len(image_files)} image(s). Processing...")
                     
-                    # Infer meet_name and date from folder structure
-                    # Convention: .../meet_name/YYYY-MM-DD/file.png
-                    try:
-                        relative = img_path.relative_to(folder)
-                        parts = relative.parts
-                        if len(parts) >= 3:
-                            meet_name_inferred = parts[-3]  # grandparent folder
-                            event_date_inferred = parts[-2]  # parent folder
-                        elif len(parts) >= 2:
-                            meet_name_inferred = parts[-2]  # parent folder
-                            event_date_inferred = datetime.now().strftime("%Y-%m-%d")
-                        else:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    succeeded = []
+                    skipped = []
+                    failed = []
+                    
+                    ocr = OCRService()
+                    
+                    for i, img_path in enumerate(sorted(image_files)):
+                        progress_bar.progress((i + 1) / len(image_files))
+                        status_text.text(f"Processing {i+1}/{len(image_files)}: {img_path.name}")
+                        
+                        # Infer meet_name and date from folder structure
+                        # Convention: .../meet_name/YYYY-MM-DD/file.png
+                        try:
+                            relative = img_path.relative_to(folder)
+                            parts = relative.parts
+                            if len(parts) >= 3:
+                                meet_name_inferred = parts[-3]  # grandparent folder
+                                event_date_inferred = parts[-2]  # parent folder
+                            elif len(parts) >= 2:
+                                meet_name_inferred = parts[-2]  # parent folder
+                                event_date_inferred = datetime.now().strftime("%Y-%m-%d")
+                            else:
+                                meet_name_inferred = "Unknown Meet"
+                                event_date_inferred = datetime.now().strftime("%Y-%m-%d")
+                        except ValueError:
                             meet_name_inferred = "Unknown Meet"
                             event_date_inferred = datetime.now().strftime("%Y-%m-%d")
-                    except ValueError:
-                        meet_name_inferred = "Unknown Meet"
-                        event_date_inferred = datetime.now().strftime("%Y-%m-%d")
-                    
-                    # Save screenshot
-                    success, save_msg = ScreenshotManager.save_from_path(
-                        str(img_path), meet_name_inferred, event_date_inferred
-                    )
-                    
-                    if not success:
-                        if "duplicate" in save_msg.lower():
-                            skipped.append((img_path.name, save_msg))
-                        else:
-                            failed.append((img_path.name, save_msg, {}))
-                        continue
-                    
-                    # Extract via OCR
-                    screenshot_saved_path = save_msg  # save_from_path returns the path on success
-                    is_valid, data, extract_msg = ocr.extract_from_screenshot(screenshot_saved_path)
-                    
-                    if is_valid:
-                        # Build SwimEvent from OCR data (same logic as Upload page)
-                        event = SwimEvent(
-                            date=data.get("date", event_date_inferred),
-                            meet_name=data.get("meet_name", meet_name_inferred),
-                            stroke=data.get("stroke", ""),
-                            distance=int(data.get("distance", 0)) if data.get("distance") else 0,
-                            time=data.get("time", ""),
-                            splits=data.get("splits", []),
-                            course=data.get("course", ""),
-                            round=data.get("round", ""),
-                            rank=int(data.get("rank", 0)) if data.get("rank") else 0,
-                            age_group=data.get("age_group", ""),
-                            source_screenshot=screenshot_saved_path,
-                            heat_lane=data.get("heat_lane", ""),
-                            swimmer_name=data.get("swimmer_name", "Sunny")
-                        )
-                        # Validate before saving
-                        event_data = event.to_dict()
-                        type_valid, type_errors = validate_field_types(event_data)
-                        data_valid, data_errors = validate_swim_event_data(event_data)
-                        all_errors = type_errors + data_errors
-                        if all_errors:
-                            failed.append((img_path.name, "; ".join(all_errors), data))
-                        else:
-                            DataStore.add_swim_event(event)
-                            succeeded.append((img_path.name, data))
-                    else:
-                        failed.append((img_path.name, extract_msg, data))
-                
-                status_text.text("Processing complete!")
-                
-                # Summary
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Succeeded", len(succeeded))
-                col2.metric("Skipped (duplicates)", len(skipped))
-                col3.metric("Failed", len(failed))
-                
-                # Show succeeded items
-                if succeeded:
-                    st.subheader("Successfully Processed")
-                    for name, data in succeeded:
-                        st.markdown(f"✅ **{name}** — {data.get('stroke', '')} {data.get('distance', '')}m {data.get('time', '')}")
-                
-                # Show skipped items
-                if skipped:
-                    st.subheader("Skipped (Duplicates)")
-                    for name, msg in skipped:
-                        st.markdown(f"⏭️ **{name}**: {msg}")
-                
-                # Show failed items for review
-                if failed:
-                    st.subheader("Items Needing Review")
-                    for name, msg, data in failed:
-                        with st.expander(f"❌ {name}: {msg}"):
-                            st.json(data)
-        else:
-            st.error("Selected path is not a valid directory")
-
-
-# ==================== GALLERY PAGE ====================
-elif st.session_state.page == "Gallery":
-    st.title("🖼️ Screenshot Gallery")
-    
-    screenshots = ScreenshotManager.list_screenshots()
-    
-    if not screenshots:
-        st.info("No screenshots uploaded yet. Go to Upload page to add screenshots.")
-    else:
-        st.write(f"Total screenshots: {len(screenshots)}")
-        
-        # Group by meet
-        meet_groups = {}
-        for s in screenshots:
-            meet = s.get("meet_name", "Unknown")
-            if meet not in meet_groups:
-                meet_groups[meet] = []
-            meet_groups[meet].append(s)
-        
-        for meet, items in meet_groups.items():
-            with st.expander(f"📁 {meet} ({len(items)} screenshots)"):
-                cols = st.columns(3)
-                for i, screenshot in enumerate(items):
-                    with cols[i % 3]:
-                        thumb = ScreenshotManager.get_screenshot_thumbnail(screenshot["path"])
-                        if thumb:
-                            st.image(thumb, use_container_width=True)
-                        st.caption(f"{screenshot['original_filename']}")
-                        st.caption(f"Date: {screenshot['date']}")
                         
-                        if st.button("🗑️ Delete", key=f"del_{screenshot['path']}"):
-                            success, msg = ScreenshotManager.delete_screenshot(screenshot["path"])
-                            if success:
-                                st.success(msg)
-                                st.rerun()
+                        # Save screenshot
+                        success, save_msg = ScreenshotManager.save_from_path(
+                            str(img_path), meet_name_inferred, event_date_inferred
+                        )
+                        
+                        if not success:
+                            if "duplicate" in save_msg.lower():
+                                skipped.append((img_path.name, save_msg))
                             else:
-                                st.error(msg)
+                                failed.append((img_path.name, save_msg, {}))
+                            continue
+                        
+                        # Extract via OCR
+                        screenshot_saved_path = save_msg  # save_from_path returns the path on success
+                        is_valid, data, extract_msg = ocr.extract_from_screenshot(screenshot_saved_path)
+                        
+                        if is_valid:
+                            # Build SwimEvent from OCR data
+                            event = SwimEvent(
+                                date=data.get("date", event_date_inferred),
+                                meet_name=data.get("meet_name", meet_name_inferred),
+                                stroke=data.get("stroke", ""),
+                                distance=int(data.get("distance", 0)) if data.get("distance") else 0,
+                                time=data.get("time", ""),
+                                splits=data.get("splits", []),
+                                course=data.get("course", ""),
+                                round=data.get("round", ""),
+                                rank=int(data.get("rank", 0)) if data.get("rank") else 0,
+                                age_group=data.get("age_group", ""),
+                                source_screenshot=screenshot_saved_path,
+                                heat_lane=data.get("heat_lane", ""),
+                                swimmer_name=data.get("swimmer_name", "Sunny")
+                            )
+                            # Validate before saving
+                            event_data = event.to_dict()
+                            type_valid, type_errors = validate_field_types(event_data)
+                            data_valid, data_errors = validate_swim_event_data(event_data)
+                            all_errors = type_errors + data_errors
+                            if all_errors:
+                                failed.append((img_path.name, "; ".join(all_errors), data))
+                            else:
+                                DataStore.add_swim_event(event)
+                                succeeded.append((img_path.name, data))
+                        else:
+                            failed.append((img_path.name, extract_msg, data))
+                    
+                    status_text.text("Processing complete!")
+                    
+                    # Summary
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Succeeded", len(succeeded))
+                    col2.metric("Skipped (duplicates)", len(skipped))
+                    col3.metric("Failed", len(failed))
+                    
+                    # Show succeeded items
+                    if succeeded:
+                        st.subheader("Successfully Processed")
+                        for name, data in succeeded:
+                            st.markdown(f"✅ **{name}** — {data.get('stroke', '')} {data.get('distance', '')}m {data.get('time', '')}")
+                    
+                    # Show skipped items
+                    if skipped:
+                        st.subheader("Skipped (Duplicates)")
+                        for name, msg in skipped:
+                            st.markdown(f"⏭️ **{name}**: {msg}")
+                    
+                    # Show failed items for review
+                    if failed:
+                        st.subheader("Items Needing Review")
+                        for name, msg, data in failed:
+                            with st.expander(f"❌ {name}: {msg}"):
+                                st.json(data)
+            else:
+                st.error("Selected path is not a valid directory")
+
+    with tab3:
+        st.subheader("Import from Excel")
+        st.info("Upload an Excel file (.xlsx) with swim event records to import them directly.")
+        
+        uploaded_excel = st.file_uploader("Choose Excel file", type=["xlsx", "xls"], key="excel_uploader")
+        
+        if uploaded_excel:
+            try:
+                df = pd.read_excel(uploaded_excel)
+                st.write(f"Found {len(df)} rows")
+                st.dataframe(df.head(10), use_container_width=True)
+                
+                # Expected columns mapping (flexible - try common column names)
+                # Required: date, meet_name, stroke, distance, time
+                # Optional: swimmer_name, age_group, rank, course, round, splits
+                
+                st.subheader("Column Mapping")
+                st.caption("Map your Excel columns to swim event fields:")
+                
+                excel_cols = ["(not mapped)"] + list(df.columns)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    date_col = st.selectbox("Date", excel_cols, key="map_date")
+                    meet_col = st.selectbox("Meet Name", excel_cols, key="map_meet")
+                    stroke_col = st.selectbox("Stroke", excel_cols, key="map_stroke")
+                    distance_col = st.selectbox("Distance (m)", excel_cols, key="map_distance")
+                    time_col = st.selectbox("Time", excel_cols, key="map_time")
+                with col2:
+                    swimmer_col = st.selectbox("Swimmer Name", excel_cols, key="map_swimmer")
+                    age_group_col = st.selectbox("Age Group", excel_cols, key="map_age_group")
+                    rank_col = st.selectbox("Rank", excel_cols, key="map_rank")
+                    course_col = st.selectbox("Course (SC/LC)", excel_cols, key="map_course")
+                    round_col = st.selectbox("Round", excel_cols, key="map_round")
+                
+                if st.button("Import Records", type="primary"):
+                    # Validate required mappings
+                    required = {"Date": date_col, "Meet Name": meet_col, "Stroke": stroke_col, "Distance": distance_col, "Time": time_col}
+                    missing = [k for k, v in required.items() if v == "(not mapped)"]
+                    
+                    if missing:
+                        st.error(f"Please map required columns: {', '.join(missing)}")
+                    else:
+                        success_count = 0
+                        error_count = 0
+                        
+                        for idx, row in df.iterrows():
+                            try:
+                                event = SwimEvent(
+                                    date=str(row[date_col]).strip()[:10],
+                                    meet_name=str(row[meet_col]).strip(),
+                                    stroke=str(row[stroke_col]).strip().lower(),
+                                    distance=int(float(row[distance_col])),
+                                    time=str(row[time_col]).strip(),
+                                    swimmer_name=str(row[swimmer_col]).strip() if swimmer_col != "(not mapped)" else "Sunny",
+                                    age_group=str(row[age_group_col]).strip() if age_group_col != "(not mapped)" else "",
+                                    rank=int(float(row[rank_col])) if rank_col != "(not mapped)" and pd.notna(row[rank_col]) else None,
+                                    course=str(row[course_col]).strip().upper() if course_col != "(not mapped)" else "",
+                                    round=str(row[round_col]).strip() if round_col != "(not mapped)" else "",
+                                )
+                                DataStore.add_swim_event(event)
+                                success_count += 1
+                            except Exception as e:
+                                error_count += 1
+                        
+                        if success_count > 0:
+                            st.success(f"Successfully imported {success_count} records!")
+                            st.session_state.upload_success_count += success_count
+                        if error_count > 0:
+                            st.warning(f"Failed to import {error_count} records due to data errors.")
+                            st.session_state.upload_failed_count += error_count
+                            
+            except Exception as e:
+                st.error(f"Error reading Excel file: {str(e)}")
 
 
 # ==================== RECORDS PAGE ====================
@@ -443,6 +548,8 @@ elif st.session_state.page == "Records":
                 "Date": e.date,
                 "Meet": e.meet_name,
                 "Swimmer": e.swimmer_name,
+                "Age Group": e.age_group if e.age_group else "-",
+                "Age": (lambda d: d.year - BIRTHDAY.year - ((d.month, d.day) < (BIRTHDAY.month, BIRTHDAY.day)))(datetime.strptime(e.date, "%Y-%m-%d").date()),
                 "Stroke": e.stroke,
                 "Distance": e.distance,
                 "Time": e.time,
@@ -527,23 +634,7 @@ elif st.session_state.page == "Body Metrics":
             df["date"] = pd.to_datetime(df["date"])
             st.dataframe(df.sort_values("date", ascending=False), use_container_width=True)
             
-            st.subheader("Progression Charts")
-            tab1, tab2, tab3 = st.tabs(["Height", "Weight", "BMI"])
-            
-            with tab1:
-                fig = px.line(df.sort_values("date"), x="date", y="height_cm", 
-                             title="Height Over Time", markers=True)
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with tab2:
-                fig = px.line(df.sort_values("date"), x="date", y="weight_kg",
-                             title="Weight Over Time", markers=True)
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with tab3:
-                fig = px.line(df.sort_values("date"), x="date", y="bmi",
-                             title="BMI Over Time", markers=True)
-                st.plotly_chart(fig, use_container_width=True)
+
 
 
 # ==================== ANALYTICS PAGE ====================
@@ -564,81 +655,344 @@ elif st.session_state.page == "Analytics":
         
         st.markdown("---")
         
-        # Time progression
-        st.subheader("Time Progression")
-        strokes = sorted(list(set(e.stroke for e in events if e.stroke)))
-        distances = sorted(list(set(e.distance for e in events if e.distance)))
+        # Personal Bests — sorted by canonical PB order
+        PB_ORDER = [
+            (50, "butterfly"), (50, "backstroke"), (50, "breaststroke"), (50, "freestyle"),
+            (100, "butterfly"), (100, "backstroke"), (100, "breaststroke"), (100, "freestyle"),
+            (200, "butterfly"), (200, "backstroke"), (200, "breaststroke"), (200, "freestyle"),
+            (400, "freestyle"), (800, "freestyle"),
+        ]
         
-        if strokes and distances:
-            col1, col2 = st.columns(2)
-            selected_stroke = col1.selectbox("Stroke", strokes)
-            selected_distance = col2.selectbox("Distance (m)", distances)
-            
-            fig = PerformanceAnalytics.create_time_progression_chart(selected_stroke, selected_distance)
-            if fig.data:
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No data for this stroke/distance combination.")
+        def _pb_sort_key(row):
+            try:
+                return PB_ORDER.index((int(row["distance"]), row["stroke"]))
+            except ValueError:
+                return len(PB_ORDER)
         
-        st.markdown("---")
-        
-        # Stroke comparison
-        st.subheader("Stroke Comparison")
-        radar_fig = PerformanceAnalytics.create_stroke_radar_chart()
-        if radar_fig.data:
-            st.plotly_chart(radar_fig, use_container_width=True)
-        else:
-            st.info("Need data in multiple strokes for comparison.")
-        
-        st.markdown("---")
-        
-        # Personal bests
-        st.subheader("Personal Bests")
         pb_df = PerformanceAnalytics.get_personal_bests()
         if not pb_df.empty:
-            st.dataframe(pb_df[["stroke", "distance", "course", "time", "date", "meet_name"]], 
-                        use_container_width=True)
+            pb_df["_sort"] = pb_df.apply(_pb_sort_key, axis=1)
+            pb_df = pb_df.sort_values("_sort").drop(columns=["_sort"])
+            pb_df["Event"] = pb_df["distance"].astype(str) + "m " + pb_df["stroke"].str.title()
+            display_cols = ["Event", "time", "date", "meet_name"]
+            display_rename = {"time": "Time", "date": "Date", "meet_name": "Meet"}
+        
+            lc_df = pb_df[pb_df["course"] == "LC"]
+            sc_df = pb_df[pb_df["course"] == "SC"]
+            other_df = pb_df[~pb_df["course"].isin(["LC", "SC"])]
+        
+            if not lc_df.empty:
+                st.subheader("PB - LC")
+                st.dataframe(
+                    lc_df[display_cols].rename(columns=display_rename),
+                    use_container_width=True, hide_index=True,
+                )
+        
+            if not sc_df.empty:
+                st.subheader("PB - SC")
+                st.dataframe(
+                    sc_df[display_cols].rename(columns=display_rename),
+                    use_container_width=True, hide_index=True,
+                )
+        
+            if not other_df.empty:
+                st.subheader("Personal Bests")
+                st.dataframe(
+                    other_df[display_cols].rename(columns=display_rename),
+                    use_container_width=True, hide_index=True,
+                )
         else:
             st.info("No personal bests recorded yet.")
-
-
-# ==================== RESEARCH PAGE ====================
-elif st.session_state.page == "Research":
-    st.title("🔬 Research Comparison")
-    
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("Compare Against Benchmarks")
-        stroke = st.selectbox("Stroke", ["freestyle", "backstroke", "breaststroke", "butterfly", "IM"])
-        distance = st.selectbox("Distance", [50, 100, 200, 400, 800])
-        age = st.number_input("Age", min_value=5, max_value=20, value=10)
         
-        if st.button("Search Benchmarks", type="primary"):
-            with st.spinner("Searching..."):
-                results = ResearchService.search_benchmarks(stroke, distance, age)
-            
-            st.subheader("Search Results")
-            for r in results:
-                with st.expander(r.get("title", "Result")):
-                    st.write(r.get("body", "No description"))
-                    if r.get("href"):
-                        st.markdown(f"[Link]({r['href']})")
-    
-    with col2:
-        st.subheader("Performance vs Benchmarks")
-        comparison = ResearchService.get_comparison(stroke, distance, age)
+        st.markdown("---")
         
-        if "error" in comparison:
-            st.info(comparison["error"])
+        # Time Development
+        st.subheader("Time Development")
+        dev_data = PerformanceAnalytics.get_time_development_data()
+        if dev_data:
+            import plotly.graph_objects as go
+
+            def format_time_axis(seconds):
+                """Convert seconds to MM:SS.ss format for axis labels."""
+                mins = int(seconds) // 60
+                secs = seconds - (mins * 60)
+                if mins > 0:
+                    return f"{mins}:{secs:05.2f}"
+                else:
+                    return f"{secs:.2f}"
+
+            # Each stroke-distance combo gets its own chart
+            charts_shown = 0
+            for (stroke, distance), records in sorted(dev_data.items(), key=lambda x: (x[0][0], x[0][1])):
+                # Deduplicate: keep only best (fastest) time per day
+                best_by_date = {}
+                for r in records:
+                    d = r["date"]
+                    if d not in best_by_date or r["time_seconds"] < best_by_date[d]["time_seconds"]:
+                        best_by_date[d] = r
+                records = sorted(best_by_date.values(), key=lambda x: x["date"])
+
+                if len(records) <= 2:
+                    continue
+
+                charts_shown += 1
+                label = f"{distance}m {stroke.title()}"
+                st.subheader(label)
+
+                dates = [r["date"] for r in records]
+                times_sec = [r["time_seconds"] for r in records]
+                time_labels = [r["time"] for r in records]
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=dates, y=times_sec,
+                    mode="lines+markers",
+                    name=label,
+                    line_shape="spline",
+                    customdata=time_labels,
+                    hovertemplate=(
+                        f"{label}<br>"
+                        "Date: %{x}<br>"
+                        "Time: %{customdata}<extra></extra>"
+                    ),
+                ))
+
+                # Add National/International Master and Level 1 reference lines from LC Standards
+                lc_match = next((s for s in LC_STANDARDS if s["Event"].lower() == label.lower()), None)
+                nat_master_secs = 0
+                int_master_secs = 0
+                level1_secs = 0
+                if lc_match:
+                    nat_master_secs = time_to_seconds(lc_match["National Master"])
+                    int_master_secs = time_to_seconds(lc_match["International Master"])
+                    level1_secs = time_to_seconds(lc_match["Level 1"])
+                    if nat_master_secs > 0:
+                        fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
+                                      annotation_text="National Master (运动健将)",
+                                      annotation_position="top left",
+                                      annotation_font_size=11)
+                    if int_master_secs > 0:
+                        fig.add_hline(y=int_master_secs, line_dash="dash", line_color="gold",
+                                      annotation_text="International Master (国际级健将)",
+                                      annotation_position="top left",
+                                      annotation_font_size=11)
+                    if level1_secs > 0:
+                        fig.add_hline(y=level1_secs, line_dash="dash", line_color="cyan",
+                                      annotation_text="Level 1 (一级)",
+                                      annotation_position="top left",
+                                      annotation_font_size=11)
+
+                # Generate formatted Y-axis tick labels in MM:SS.ss
+                y_min = min(times_sec)
+                y_max = max(times_sec)
+                # Extend range to include reference lines if present
+                if lc_match:
+                    if nat_master_secs > 0:
+                        y_min = min(y_min, nat_master_secs)
+                        y_max = max(y_max, nat_master_secs)
+                    if int_master_secs > 0:
+                        y_min = min(y_min, int_master_secs)
+                        y_max = max(y_max, int_master_secs)
+                    if level1_secs > 0:
+                        y_min = min(y_min, level1_secs)
+                        y_max = max(y_max, level1_secs)
+                tick_count = 6
+                tick_step = (y_max - y_min) / (tick_count - 1)
+                tick_vals = [y_min + i * tick_step for i in range(tick_count)]
+                tick_text = [format_time_axis(v) for v in tick_vals]
+
+                # Add standard values to tick marks
+                if lc_match:
+                    if nat_master_secs > 0:
+                        tick_vals.append(nat_master_secs)
+                        tick_text.append(format_time_axis(nat_master_secs))
+                    if int_master_secs > 0:
+                        tick_vals.append(int_master_secs)
+                        tick_text.append(format_time_axis(int_master_secs))
+                    if level1_secs > 0:
+                        tick_vals.append(level1_secs)
+                        tick_text.append(format_time_axis(level1_secs))
+
+                # Sort tick_vals and tick_text together by value
+                paired = sorted(zip(tick_vals, tick_text), key=lambda p: p[0])
+                tick_vals = [p[0] for p in paired]
+                tick_text = [p[1] for p in paired]
+
+                fig.update_layout(
+                    title=label,
+                    yaxis_title="Time",
+                    xaxis_title="Date",
+                    showlegend=False,
+                    hovermode="x unified",
+                )
+                fig.update_yaxes(
+                    tickvals=tick_vals,
+                    ticktext=tick_text,
+                )
+                st.plotly_chart(fig, use_container_width=True)
+        
+            if charts_shown == 0:
+                st.info("Need more than 2 records per stroke/distance combination to show time development.")
+        
+            # Insights below all charts
+            insights = PerformanceAnalytics.get_time_development_insights()
+            if insights["trends"]:
+                st.markdown("**Insights**")
+                col_i1, col_i2 = st.columns(2)
+                with col_i1:
+                    if insights["most_improved"]:
+                        label, imp = insights["most_improved"]
+                        st.markdown(f"🏃 **Most Improved:** {label} — {imp}s faster")
+                    else:
+                        st.markdown("🏃 **Most Improved:** N/A")
+                with col_i2:
+                    if insights["most_consistent"]:
+                        label, var = insights["most_consistent"]
+                        st.markdown(f"🎯 **Most Consistent:** {label} — variance {var}s²")
+                    else:
+                        st.markdown("🎯 **Most Consistent:** N/A")
+        
+                st.markdown("**Trend by Event**")
+                for t in insights["trends"]:
+                    icon = {"improving": "🟢", "declining": "🔴", "stable": "🟡"}.get(t["direction"], "⚪")
+                    direction_text = t["direction"].capitalize()
+                    imp_str = f"{t['improvement']:+.2f}s"
+                    st.markdown(f"{icon} **{t['label']}**: {direction_text} ({imp_str}) — {t['first_time']} → {t['last_time']}")
         else:
-            st.metric("Personal Best", comparison["personal_best"])
-            st.caption(f"Achieved: {comparison['pb_date']}")
-            
-            st.markdown("---")
-            st.subheader("Benchmark References")
-            for b in comparison.get("benchmarks", []):
-                st.markdown(f"- **{b.get('title', 'Unknown')}**: {b.get('body', '')[:100]}...")
+            st.info("Need more than 2 records per stroke/distance combination to show time development.")
+        
+        # Download HTML Report
+        st.markdown("---")
+        st.subheader("Download Report")
+        if st.button("📄 Download HTML Report", type="primary"):
+            with st.spinner("Generating report..."):
+                html_content = PerformanceAnalytics.generate_html_report()
+            st.download_button(
+                label="💾 Save Report",
+                data=html_content,
+                file_name="sunny_swim_report.html",
+                mime="text/html",
+            )
+
+
+# ==================== NATIONAL STANDARD PAGE ====================
+elif st.session_state.page == "National Standard":
+    st.header("National Standard")
+    st.caption("Chinese Female National Swimming Standards (Effective 2025-01-01)")
+    st.caption("Source: Chinese Swimming Association")
+
+    tab1, tab2 = st.tabs(["Long Course (50m)", "Short Course (25m)"])
+
+    with tab1:
+        st.subheader("LC Standards - Chinese Female")
+        df_lc = pd.DataFrame(LC_STANDARDS)
+        st.dataframe(df_lc, use_container_width=True, hide_index=True)
+
+    with tab2:
+        st.subheader("SC Standards - Chinese Female")
+        df_sc = pd.DataFrame(SC_STANDARDS)
+        st.dataframe(df_sc, use_container_width=True, hide_index=True)
+
+    # Export as Excel
+    st.divider()
+    st.subheader("Export Standards")
+
+    # Create Excel file in memory
+    import io
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        pd.DataFrame(LC_STANDARDS).to_excel(writer, sheet_name='Long Course (50m)', index=False)
+        pd.DataFrame(SC_STANDARDS).to_excel(writer, sheet_name='Short Course (25m)', index=False)
+
+    st.download_button(
+        label="📥 Download Standards as Excel",
+        data=output.getvalue(),
+        file_name="chinese_swimming_standards_2025.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # Import from OCR Screenshot
+    st.divider()
+    st.subheader("Import Standards from Screenshot")
+    uploaded_std = st.file_uploader("Upload a screenshot of swimming standards table", type=["png", "jpg", "jpeg"], key="std_screenshot")
+
+    if uploaded_std:
+        if st.button("Extract Standards via OCR", type="primary"):
+            with st.spinner("Extracting standards from screenshot..."):
+                from src.ocr_service import OCRService
+                import base64
+
+                # Read image and encode
+                image_bytes = uploaded_std.read()
+                base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                file_ext = uploaded_std.name.split('.')[-1].lower()
+                mime_type = f"image/{'jpeg' if file_ext in ('jpg', 'jpeg') else file_ext}"
+
+                # Use Qwen VL model to extract standards table
+                from openai import OpenAI
+                from src.config import ALIBABA_CLOUD_API_KEY, ALIBABA_CLOUD_BASE_URL
+
+                client = OpenAI(api_key=ALIBABA_CLOUD_API_KEY, base_url=ALIBABA_CLOUD_BASE_URL)
+
+                prompt = """Extract all swimming time standards from this image into a structured format.
+For each event, provide: Event name (in English, e.g. "50m Freestyle"), and times for each level.
+The columns are: International Master (国际级运动健将), National Master (运动健将), Level 1 (一级运动员), Level 2 (二级运动员).
+There may be separate columns for 50m pool (Long Course) and 25m pool (Short Course).
+
+Return as JSON with this structure:
+{
+  "lc_standards": [{"Event": "50m Freestyle", "International Master": "24.70", "National Master": "25.85", "Level 1": "27.20", "Level 2": "31.50"}, ...],
+  "sc_standards": [{"Event": "50m Freestyle", "International Master": "24.44", "National Master": "25.00", "Level 1": "26.40", "Level 2": "30.50"}, ...]
+}
+
+Use English event names: "50m Freestyle", "100m Freestyle", "200m Freestyle", "400m Freestyle", "800m Freestyle", "1500m Freestyle", "50m Backstroke", "100m Backstroke", "200m Backstroke", "50m Breaststroke", "100m Breaststroke", "200m Breaststroke", "50m Butterfly", "100m Butterfly", "200m Butterfly", "100m IM", "200m IM", "400m IM".
+Format times as SS.ss or M:SS.ss or MM:SS.ss as appropriate.
+Return ONLY the JSON, no other text."""
+
+                response = client.chat.completions.create(
+                    model="qwen-vl-max",
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}}
+                        ]
+                    }]
+                )
+
+                result_text = response.choices[0].message.content
+
+                # Try to parse JSON
+                import json
+                try:
+                    # Strip markdown code fences if present
+                    if "```json" in result_text:
+                        result_text = result_text.split("```json")[1].split("```")[0]
+                    elif "```" in result_text:
+                        result_text = result_text.split("```")[1].split("```")[0]
+
+                    extracted = json.loads(result_text.strip())
+
+                    if "lc_standards" in extracted:
+                        st.success(f"Extracted {len(extracted['lc_standards'])} LC standards and {len(extracted.get('sc_standards', []))} SC standards")
+
+                        st.subheader("Extracted LC Standards")
+                        df_extracted_lc = pd.DataFrame(extracted["lc_standards"])
+                        st.dataframe(df_extracted_lc, use_container_width=True, hide_index=True)
+
+                        if "sc_standards" in extracted and extracted["sc_standards"]:
+                            st.subheader("Extracted SC Standards")
+                            df_extracted_sc = pd.DataFrame(extracted["sc_standards"])
+                            st.dataframe(df_extracted_sc, use_container_width=True, hide_index=True)
+
+                        st.info("Note: To apply these standards, update the LC_STANDARDS and SC_STANDARDS in the source code.")
+                    else:
+                        st.warning("Could not parse standards structure from OCR result.")
+                        st.code(result_text)
+                except json.JSONDecodeError:
+                    st.warning("OCR extracted text but couldn't parse as structured data:")
+                    st.code(result_text)
 
 
 # ==================== INSIGHTS PAGE ====================
@@ -725,73 +1079,3 @@ elif st.session_state.page == "Q&A":
         st.rerun()
 
 
-# ==================== DATA EXPORT (Footer) ====================
-st.markdown("---")
-with st.expander("💾 Data Management"):
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        # Export
-        if st.button("Export All Data (JSON)"):
-            export_data = {
-                "swim_events": [e.to_dict() for e in DataStore.load_swim_events()],
-                "body_metrics": [m.to_dict() for m in DataStore.load_body_metrics()],
-                "screenshots": ScreenshotIndex.list_all(),
-                "exported_at": datetime.now().isoformat()
-            }
-            st.download_button(
-                label="Download JSON",
-                data=json.dumps(export_data, indent=2),
-                file_name=f"sunny_swim_data_{datetime.now().strftime('%Y%m%d')}.json",
-                mime="application/json"
-            )
-    
-    with col2:
-        # Import
-        uploaded_backup = st.file_uploader("Import Backup JSON", type=["json"])
-        if uploaded_backup and st.button("Restore Data"):
-            try:
-                data = json.loads(uploaded_backup.read())
-            except json.JSONDecodeError as e:
-                logger.error("Failed to parse backup JSON: %s", e)
-                st.error(f"Invalid JSON file: {e}")
-            except Exception as e:
-                logger.error("Unexpected error reading backup file", exc_info=True)
-                st.error(f"Failed to read backup file: {type(e).__name__}: {str(e)}")
-            else:
-                # Validate structure before writing anything
-                try:
-                    swim_events = [SwimEvent.from_dict(e) for e in data.get("swim_events", [])]
-                except (KeyError, ValueError, TypeError) as e:
-                    logger.error("Invalid swim_events data in backup: [%s] %s", type(e).__name__, e)
-                    st.error(f"Invalid swim events data in backup: {type(e).__name__}: {str(e)}")
-                    swim_events = None
-
-                try:
-                    body_metrics = [BodyMetrics.from_dict(m) for m in data.get("body_metrics", [])]
-                except (KeyError, ValueError, TypeError) as e:
-                    logger.error("Invalid body_metrics data in backup: [%s] %s", type(e).__name__, e)
-                    st.error(f"Invalid body metrics data in backup: {type(e).__name__}: {str(e)}")
-                    body_metrics = None
-
-                # Only persist if ALL parts parsed successfully
-                if swim_events is not None and body_metrics is not None:
-                    try:
-                        if swim_events:
-                            DataStore.save_swim_events(swim_events)
-                        if body_metrics:
-                            DataStore.save_body_metrics(body_metrics)
-                        st.success("Data restored successfully!")
-                    except (OSError, IOError) as e:
-                        logger.error("Failed to write restored data: [%s] %s", type(e).__name__, e)
-                        st.error(f"Failed to save restored data: {type(e).__name__}: {str(e)}")
-                else:
-                    st.error("Restore aborted due to validation errors. No data was changed.")
-    
-    with col3:
-        st.markdown("**API Status**")
-        from src.config import ALIBABA_CLOUD_API_KEY
-        if ALIBABA_CLOUD_API_KEY:
-            st.success("✅ Alibaba Cloud API configured")
-        else:
-            st.warning("⚠️ Set ALIBABA_CLOUD_API_KEY environment variable")
