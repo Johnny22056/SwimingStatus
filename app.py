@@ -147,15 +147,13 @@ if st.session_state.page == "Import":
     
     with tab1:
         st.subheader("Upload New Screenshot")
-        meet_name = st.text_input("Meet Name", value="Swim Meet")
-        event_date = st.date_input("Event Date", value=datetime.now())
         uploaded_file = st.file_uploader("Choose screenshot", type=["png", "jpg", "jpeg"])
         
         if uploaded_file and st.button("Upload & Extract", type="primary"):
             try:
                 # Save screenshot
                 success, msg = ScreenshotManager.save_uploaded_screenshot(
-                    uploaded_file, meet_name, event_date.strftime("%Y-%m-%d")
+                    uploaded_file, "Unknown", datetime.now().strftime("%Y-%m-%d")
                 )
             except (OSError, IOError) as e:
                 logger.error("Failed to save uploaded screenshot: [%s] %s", type(e).__name__, e)
@@ -170,7 +168,7 @@ if st.session_state.page == "Import":
                 # Auto-extract with OCR
                 with st.spinner("Extracting data with Alibaba Cloud Model Studio..."):
                     ocr = OCRService()
-                    screenshot_path = str(SCREENSHOTS_DIR / ScreenshotManager.sanitize_meet_name(meet_name) / event_date.strftime("%Y-%m-%d") / uploaded_file.name)
+                    screenshot_path = str(SCREENSHOTS_DIR / ScreenshotManager.sanitize_meet_name("Unknown") / datetime.now().strftime("%Y-%m-%d") / uploaded_file.name)
                     is_valid, data, extract_msg = ocr.extract_from_screenshot(screenshot_path)
                 
                 if is_valid:
@@ -188,8 +186,8 @@ if st.session_state.page == "Import":
                     
                     # Save to events
                     event = SwimEvent(
-                        date=data.get("date", event_date.strftime("%Y-%m-%d")),
-                        meet_name=data.get("meet_name", meet_name),
+                        date=data.get("date", datetime.now().strftime("%Y-%m-%d")),
+                        meet_name=data.get("meet_name", "Unknown"),
                         stroke=data.get("stroke", ""),
                         distance=int(data.get("distance", 0)) if data.get("distance") else 0,
                         time=data.get("time", ""),
@@ -235,8 +233,8 @@ if st.session_state.page == "Import":
                     with st.form("manual_correction_form"):
                         extracted = st.session_state.last_extraction or {}
                         
-                        mc_date = st.date_input("Date", value=datetime.strptime(extracted.get("date", event_date.strftime("%Y-%m-%d")) or event_date.strftime("%Y-%m-%d"), "%Y-%m-%d") if extracted.get("date") else event_date)
-                        mc_meet = st.text_input("Meet Name", value=extracted.get("meet_name") or meet_name)
+                        mc_date = st.date_input("Date", value=datetime.strptime(extracted.get("date", datetime.now().strftime("%Y-%m-%d")) or datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d") if extracted.get("date") else datetime.now())
+                        mc_meet = st.text_input("Meet Name", value=extracted.get("meet_name") or "Unknown")
                         mc_stroke = st.selectbox("Stroke", ["freestyle", "backstroke", "breaststroke", "butterfly", "IM"], index=0 if not extracted.get("stroke") else ["freestyle", "backstroke", "breaststroke", "butterfly", "IM"].index(extracted.get("stroke")))
                         mc_distance = st.number_input("Distance (m)", min_value=0, value=int(extracted.get("distance") or 0), step=50)
                         mc_time = st.text_input("Time (MM:SS.ss)", value=extracted.get("time") or "")
@@ -891,25 +889,6 @@ elif st.session_state.page == "National Standard":
         st.subheader("SC Standards - Chinese Female")
         df_sc = pd.DataFrame(SC_STANDARDS)
         st.dataframe(df_sc, use_container_width=True, hide_index=True)
-
-    # Export as Excel
-    st.divider()
-    st.subheader("Export Standards")
-
-    # Create Excel file in memory
-    import io
-
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        pd.DataFrame(LC_STANDARDS).to_excel(writer, sheet_name='Long Course (50m)', index=False)
-        pd.DataFrame(SC_STANDARDS).to_excel(writer, sheet_name='Short Course (25m)', index=False)
-
-    st.download_button(
-        label="📥 Download Standards as Excel",
-        data=output.getvalue(),
-        file_name="chinese_swimming_standards_2025.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
     # Import from OCR Screenshot
     st.divider()
