@@ -6,6 +6,9 @@ from datetime import datetime, date
 from pathlib import Path
 
 import streamlit as st
+
+import streamlit.components.v1 as components
+
 import pandas as pd
 import plotly.express as px
 
@@ -74,10 +77,28 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize theme before global styling
+# Initialize theme before global styling – persist across refreshes via URL query params
 if "theme" not in st.session_state:
-    st.session_state.theme = "dark"
+    _saved = st.query_params.get("theme", "dark")
+    st.session_state.theme = _saved if _saved in ("dark", "light") else "dark"
+# Keep query param in sync (covers first load & subsequent reruns)
+st.query_params["theme"] = st.session_state.theme
 theme = get_theme(st.session_state.theme)
+
+# Dynamically set Streamlit's in-memory theme config so that internal
+# components (st.dataframe Glide Data Grid) respect the chosen palette.
+# Unlike config.toml rewriting, set_option takes effect immediately for
+# the current render cycle.
+from streamlit import _config as _st_config
+
+if st.session_state.theme == "light":
+    _st_config.set_option("theme.base", "light")
+else:
+    _st_config.set_option("theme.base", "dark")
+_st_config.set_option("theme.primaryColor", theme["accent"])
+_st_config.set_option("theme.backgroundColor", theme["bg"])
+_st_config.set_option("theme.secondaryBackgroundColor", theme["bg_secondary"])
+_st_config.set_option("theme.textColor", theme["text"])
 
 # Hide Streamlit default menu and deploy button + global styling
 st.markdown(f"""
@@ -243,8 +264,81 @@ section[data-testid="stSidebar"] .stCaption {{
     color: {theme['text']} !important;
 }}
 
+/* Draggable dialog header cursor */
+[data-testid="stDialog"] div[role="dialog"] {{
+    cursor: move;
+    user-select: none;
+}}
+
 </style>
 """, unsafe_allow_html=True)
+
+# Make dialogs draggable (components.html runs JS in iframe with parent access)
+# No guard - must reinitialize on each Streamlit rerun since old iframe is destroyed
+components.html("""
+<script>
+(function() {
+    var pd = window.parent.document;
+
+    function makeDraggable() {
+        var modals = pd.querySelectorAll('[data-testid="stDialog"]');
+        if (!modals.length) return;
+        modals.forEach(function(modal) {
+            var dialog = modal.querySelector('div[role="dialog"]');
+            if (!dialog) {
+                var inner = modal.firstElementChild;
+                if (inner && inner.firstElementChild) dialog = inner.firstElementChild;
+            }
+            if (!dialog || dialog.dataset.draggable === 'true') return;
+            dialog.dataset.draggable = 'true';
+
+            var isDragging = false, startX, startY, origLeft, origTop;
+
+            dialog.addEventListener('mousedown', function(e) {
+                var rect = dialog.getBoundingClientRect();
+                if (e.clientY - rect.top > 60) return;
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                if (dialog.style.position !== 'fixed') {
+                    var r = dialog.getBoundingClientRect();
+                    dialog.style.position = 'fixed';
+                    dialog.style.left = r.left + 'px';
+                    dialog.style.top = r.top + 'px';
+                    dialog.style.transform = 'none';
+                    dialog.style.margin = '0';
+                    dialog.style.width = r.width + 'px';
+                    dialog.style.zIndex = '10000';
+                }
+                origLeft = parseInt(dialog.style.left);
+                origTop = parseInt(dialog.style.top);
+                dialog.style.cursor = 'grabbing';
+                dialog.style.transition = 'none';
+                e.preventDefault();
+            });
+            pd.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                dialog.style.left = (origLeft + (e.clientX - startX)) + 'px';
+                dialog.style.top = (origTop + (e.clientY - startY)) + 'px';
+            });
+            pd.addEventListener('mouseup', function() {
+                if (isDragging) { isDragging = false; dialog.style.cursor = ''; }
+            });
+        });
+    }
+
+    // Run immediately and on short interval to catch modals
+    makeDraggable();
+    var intv = setInterval(makeDraggable, 300);
+    // Also observe DOM changes
+    var obs = new MutationObserver(function() { setTimeout(makeDraggable, 50); });
+    obs.observe(pd.body, {childList: true, subtree: true});
+    // Stop interval after 60s to avoid endless polling
+    setTimeout(function() { clearInterval(intv); }, 60000);
+})();
+</script>
+""", height=0, scrolling=False)
 
 # Initialize session state
 if "page" not in st.session_state:
