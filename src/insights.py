@@ -48,23 +48,42 @@ class InsightGenerator:
             if first_time > 0 and last_time > 0:
                 improvement = ((first_time - last_time) / first_time) * 100
                 stroke, distance, course = key
+                event_label = f"{stroke.title()} {distance}m ({course})"
                 
                 if improvement > 5:
                     insights.append({
                         "type": "positive",
-                        "message": f"{stroke.title()} {distance}m ({course}): Improved by {improvement:.1f}% from {first.time} ({first.date}) to {last.time} ({last.date})",
+                        "message": f"{event_label}: Improved by {improvement:.1f}% from {first.time} ({first.date}) to {last.time} ({last.date})",
+                        "event": event_label,
+                        "improvement_pct": round(improvement, 1),
+                        "from_time": first.time,
+                        "from_date": first.date,
+                        "to_time": last.time,
+                        "to_date": last.date,
                         "data_points": [first.date, last.date]
                     })
                 elif improvement < -5:
                     insights.append({
                         "type": "warning",
-                        "message": f"{stroke.title()} {distance}m ({course}): Declined by {abs(improvement):.1f}% from {first.time} ({first.date}) to {last.time} ({last.date})",
+                        "message": f"{event_label}: Declined by {abs(improvement):.1f}% from {first.time} ({first.date}) to {last.time} ({last.date})",
+                        "event": event_label,
+                        "improvement_pct": round(improvement, 1),
+                        "from_time": first.time,
+                        "from_date": first.date,
+                        "to_time": last.time,
+                        "to_date": last.date,
                         "data_points": [first.date, last.date]
                     })
                 else:
                     insights.append({
                         "type": "neutral",
-                        "message": f"{stroke.title()} {distance}m ({course}): Consistent performance around {last.time} over {len(group)} races",
+                        "message": f"{event_label}: Consistent performance around {last.time} over {len(group)} races",
+                        "event": event_label,
+                        "improvement_pct": round(improvement, 1),
+                        "from_time": first.time,
+                        "from_date": first.date,
+                        "to_time": last.time,
+                        "to_date": last.date,
                         "data_points": [e.date for e in group]
                     })
         

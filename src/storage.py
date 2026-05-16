@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from src.models import SwimEvent, BodyMetrics
 from src.config import SWIM_EVENTS_FILE, BODY_METRICS_FILE, SCREENSHOT_INDEX_FILE
 
@@ -56,10 +56,33 @@ class DataStore:
         cls._save_json(SWIM_EVENTS_FILE, data)
 
     @classmethod
-    def add_swim_event(cls, event: SwimEvent) -> None:
+    def _is_duplicate_event(cls, event: SwimEvent, existing_events: List[SwimEvent]) -> bool:
+        """Check if event matches an existing record on composite key fields."""
+        for existing in existing_events:
+            if (existing.date == event.date
+                    and existing.stroke.lower() == event.stroke.lower()
+                    and int(existing.distance) == int(event.distance)
+                    and existing.time == event.time
+                    and existing.course.upper() == event.course.upper()):
+                return True
+        return False
+
+    @classmethod
+    def add_swim_event(cls, event: SwimEvent) -> Tuple[bool, str]:
+        """Add a swim event if it's not a duplicate.
+
+        Returns:
+            (True, "") if successfully added.
+            (False, "duplicate") if skipped as duplicate.
+        """
         events = cls.load_swim_events()
+        if cls._is_duplicate_event(event, events):
+            logger.info("Duplicate event skipped: %s %dm %s on %s",
+                        event.stroke, event.distance, event.time, event.date)
+            return (False, "duplicate")
         events.append(event)
         cls.save_swim_events(events)
+        return (True, "")
 
     # Body Metrics
     @classmethod

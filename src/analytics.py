@@ -88,6 +88,7 @@ class PerformanceAnalytics:
                 "time_seconds": time_sec,
                 "time": e.time,
                 "label": f"{e.stroke.title()} {e.distance}m",
+                "course": e.course if e.course else "",
             })
 
         # Filter to groups with > 2 records and sort each group by date

@@ -83,7 +83,7 @@ st.markdown("""
 
 # Initialize session state
 if "page" not in st.session_state:
-    st.session_state.page = "Import"
+    st.session_state.page = "Analytics"
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "last_extraction" not in st.session_state:
@@ -111,15 +111,29 @@ def switch_page(page_name: str):
 # Sidebar Navigation
 with st.sidebar:
     st.title("🏊 Sunny's Swimming")
-    st.markdown("---")
-    
-    pages = ["Import", "Records", "Body Metrics", "National Standard", "Analytics", "Insights", "Q&A"]
-    for page in pages:
-        if st.button(page, use_container_width=True, 
+    st.divider()
+
+    # Section 1: Analysis
+    st.caption("Analysis")
+    main_pages = ["National Standard", "Analytics", "Insights"]
+    for page in main_pages:
+        if st.button(page, key=f"nav_{page}", use_container_width=True,
                      type="primary" if st.session_state.page == page else "secondary"):
-            switch_page(page)
-    
-    st.markdown("---")
+            st.session_state.page = page
+            st.rerun()
+
+    st.divider()
+
+    # Section 2: Tools
+    st.caption("Tools")
+    tool_pages = ["Import", "Records", "Body Metrics", "Q&A"]
+    for page in tool_pages:
+        if st.button(page, key=f"nav_{page}", use_container_width=True,
+                     type="primary" if st.session_state.page == page else "secondary"):
+            st.session_state.page = page
+            st.rerun()
+
+    st.divider()
     st.caption("Data-driven swimming development")
 
 
@@ -209,9 +223,13 @@ if st.session_state.page == "Import":
                         for err in all_errors:
                             st.error(f"Validation error: {err}")
                     else:
-                        DataStore.add_swim_event(event)
-                        st.session_state.upload_success_count += 1
-                        st.success("Event saved successfully!")
+                        added, reason = DataStore.add_swim_event(event)
+                        if added:
+                            st.session_state.upload_success_count += 1
+                            st.success("Event saved successfully!")
+                        else:
+                            st.session_state.upload_duplicate_count += 1
+                            st.warning("⚠️ Duplicate record skipped — this event already exists.")
                 else:
                     st.warning(f"Extraction had issues: {extract_msg}")
                     st.session_state.upload_failed_count += 1
@@ -290,9 +308,13 @@ if st.session_state.page == "Import":
                                     for err in all_errors:
                                         st.error(f"Validation error: {err}")
                                 else:
-                                    DataStore.add_swim_event(event)
-                                    st.session_state.upload_success_count += 1
-                                    st.success("Event saved successfully!")
+                                    added, reason = DataStore.add_swim_event(event)
+                                    if added:
+                                        st.session_state.upload_success_count += 1
+                                        st.success("Event saved successfully!")
+                                    else:
+                                        st.session_state.upload_duplicate_count += 1
+                                        st.warning("⚠️ Duplicate record skipped — this event already exists.")
                                     st.session_state.last_extraction = None
                                     st.rerun()
             else:
@@ -353,6 +375,7 @@ if st.session_state.page == "Import":
                     succeeded = []
                     skipped = []
                     failed = []
+                    record_duplicates = []
                     
                     ocr = OCRService()
                     
@@ -419,18 +442,22 @@ if st.session_state.page == "Import":
                             if all_errors:
                                 failed.append((img_path.name, "; ".join(all_errors), data))
                             else:
-                                DataStore.add_swim_event(event)
-                                succeeded.append((img_path.name, data))
+                                added, reason = DataStore.add_swim_event(event)
+                                if added:
+                                    succeeded.append((img_path.name, data))
+                                else:
+                                    record_duplicates.append((img_path.name, data))
                         else:
                             failed.append((img_path.name, extract_msg, data))
                     
                     status_text.text("Processing complete!")
                     
                     # Summary
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2, col3, col4 = st.columns(4)
                     col1.metric("Succeeded", len(succeeded))
-                    col2.metric("Skipped (duplicates)", len(skipped))
-                    col3.metric("Failed", len(failed))
+                    col2.metric("Skipped (screenshot dupes)", len(skipped))
+                    col3.metric("Record Duplicates", len(record_duplicates))
+                    col4.metric("Failed", len(failed))
                     
                     # Show succeeded items
                     if succeeded:
@@ -440,9 +467,15 @@ if st.session_state.page == "Import":
                     
                     # Show skipped items
                     if skipped:
-                        st.subheader("Skipped (Duplicates)")
+                        st.subheader("Skipped (Screenshot Duplicates)")
                         for name, msg in skipped:
                             st.markdown(f"⏭️ **{name}**: {msg}")
+                    
+                    # Show record-level duplicates
+                    if record_duplicates:
+                        st.subheader("Skipped (Record Duplicates)")
+                        for name, data in record_duplicates:
+                            st.markdown(f"⚠️ **{name}** — {data.get('stroke', '')} {data.get('distance', '')}m {data.get('time', '')} already exists")
                     
                     # Show failed items for review
                     if failed:
@@ -498,6 +531,7 @@ if st.session_state.page == "Import":
                     else:
                         success_count = 0
                         error_count = 0
+                        duplicate_count = 0
                         
                         for idx, row in df.iterrows():
                             try:
@@ -513,14 +547,20 @@ if st.session_state.page == "Import":
                                     course=str(row[course_col]).strip().upper() if course_col != "(not mapped)" else "",
                                     round=str(row[round_col]).strip() if round_col != "(not mapped)" else "",
                                 )
-                                DataStore.add_swim_event(event)
-                                success_count += 1
+                                added, reason = DataStore.add_swim_event(event)
+                                if added:
+                                    success_count += 1
+                                else:
+                                    duplicate_count += 1
                             except Exception as e:
                                 error_count += 1
                         
                         if success_count > 0:
                             st.success(f"Successfully imported {success_count} records!")
                             st.session_state.upload_success_count += success_count
+                        if duplicate_count > 0:
+                            st.warning(f"⚠️ Skipped {duplicate_count} duplicate record(s).")
+                            st.session_state.upload_duplicate_count += duplicate_count
                         if error_count > 0:
                             st.warning(f"Failed to import {error_count} records due to data errors.")
                             st.session_state.upload_failed_count += error_count
@@ -718,115 +758,157 @@ elif st.session_state.page == "Analytics":
                 else:
                     return f"{secs:.2f}"
 
-            # Each stroke-distance combo gets its own chart
+            # Each stroke-distance-course combo gets its own chart
             charts_shown = 0
             for (stroke, distance), records in sorted(dev_data.items(), key=lambda x: (x[0][0], x[0][1])):
-                # Deduplicate: keep only best (fastest) time per day
-                best_by_date = {}
+                # Sub-group by course (SC/LC/unknown)
+                from collections import defaultdict as _defaultdict
+                course_groups = _defaultdict(list)
                 for r in records:
-                    d = r["date"]
-                    if d not in best_by_date or r["time_seconds"] < best_by_date[d]["time_seconds"]:
-                        best_by_date[d] = r
-                records = sorted(best_by_date.values(), key=lambda x: x["date"])
+                    course_val = r.get("course", "").strip().upper()
+                    if course_val not in ("SC", "LC"):
+                        course_val = "Unknown"
+                    course_groups[course_val].append(r)
 
-                if len(records) <= 2:
-                    continue
+                # 100m IM only exists in Short Course
+                if stroke.lower() == "im" and distance == 100:
+                    # Move any LC records to SC
+                    if "LC" in course_groups:
+                        if "SC" not in course_groups:
+                            course_groups["SC"] = []
+                        course_groups["SC"].extend(course_groups.pop("LC"))
+                    # Move any Unknown records to SC
+                    if "Unknown" in course_groups:
+                        if "SC" not in course_groups:
+                            course_groups["SC"] = []
+                        course_groups["SC"].extend(course_groups.pop("Unknown"))
 
-                charts_shown += 1
-                label = f"{distance}m {stroke.title()}"
-                st.subheader(label)
+                # Render a chart for each course group
+                for course_key in sorted(course_groups.keys()):
+                    course_records = course_groups[course_key]
 
-                dates = [r["date"] for r in records]
-                times_sec = [r["time_seconds"] for r in records]
-                time_labels = [r["time"] for r in records]
+                    # Deduplicate: keep only best (fastest) time per day
+                    best_by_date = {}
+                    for r in course_records:
+                        d = r["date"]
+                        if d not in best_by_date or r["time_seconds"] < best_by_date[d]["time_seconds"]:
+                            best_by_date[d] = r
+                    course_records = sorted(best_by_date.values(), key=lambda x: x["date"])
 
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(
-                    x=dates, y=times_sec,
-                    mode="lines+markers",
-                    name=label,
-                    line_shape="spline",
-                    customdata=time_labels,
-                    hovertemplate=(
-                        f"{label}<br>"
-                        "Date: %{x}<br>"
-                        "Time: %{customdata}<extra></extra>"
-                    ),
-                ))
+                    if len(course_records) <= 2:
+                        continue
 
-                # Add National/International Master and Level 1 reference lines from LC Standards
-                lc_match = next((s for s in LC_STANDARDS if s["Event"].lower() == label.lower()), None)
-                nat_master_secs = 0
-                int_master_secs = 0
-                level1_secs = 0
-                if lc_match:
-                    nat_master_secs = time_to_seconds(lc_match["National Master"])
-                    int_master_secs = time_to_seconds(lc_match["International Master"])
-                    level1_secs = time_to_seconds(lc_match["Level 1"])
-                    if nat_master_secs > 0:
-                        fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
-                                      annotation_text="National Master (运动健将)",
-                                      annotation_position="top left",
-                                      annotation_font_size=11)
-                    if int_master_secs > 0:
-                        fig.add_hline(y=int_master_secs, line_dash="dash", line_color="gold",
-                                      annotation_text="International Master (国际级健将)",
-                                      annotation_position="top left",
-                                      annotation_font_size=11)
-                    if level1_secs > 0:
-                        fig.add_hline(y=level1_secs, line_dash="dash", line_color="cyan",
-                                      annotation_text="Level 1 (一级)",
-                                      annotation_position="top left",
-                                      annotation_font_size=11)
+                    charts_shown += 1
+                    display_stroke = stroke.upper() if stroke.lower() == "im" else stroke.title()
+                    event_label = f"{distance}m {display_stroke}"
+                    if course_key != "Unknown":
+                        label = f"{event_label} ({course_key})"
+                    else:
+                        label = event_label
+                    st.subheader(label)
 
-                # Generate formatted Y-axis tick labels in MM:SS.ss
-                y_min = min(times_sec)
-                y_max = max(times_sec)
-                # Extend range to include reference lines if present
-                if lc_match:
-                    if nat_master_secs > 0:
-                        y_min = min(y_min, nat_master_secs)
-                        y_max = max(y_max, nat_master_secs)
-                    if int_master_secs > 0:
-                        y_min = min(y_min, int_master_secs)
-                        y_max = max(y_max, int_master_secs)
-                    if level1_secs > 0:
-                        y_min = min(y_min, level1_secs)
-                        y_max = max(y_max, level1_secs)
-                tick_count = 6
-                tick_step = (y_max - y_min) / (tick_count - 1)
-                tick_vals = [y_min + i * tick_step for i in range(tick_count)]
-                tick_text = [format_time_axis(v) for v in tick_vals]
+                    dates = [r["date"] for r in course_records]
+                    times_sec = [r["time_seconds"] for r in course_records]
+                    time_labels = [r["time"] for r in course_records]
 
-                # Add standard values to tick marks
-                if lc_match:
-                    if nat_master_secs > 0:
-                        tick_vals.append(nat_master_secs)
-                        tick_text.append(format_time_axis(nat_master_secs))
-                    if int_master_secs > 0:
-                        tick_vals.append(int_master_secs)
-                        tick_text.append(format_time_axis(int_master_secs))
-                    if level1_secs > 0:
-                        tick_vals.append(level1_secs)
-                        tick_text.append(format_time_axis(level1_secs))
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=dates, y=times_sec,
+                        mode="lines+markers",
+                        name=label,
+                        line_shape="spline",
+                        customdata=time_labels,
+                        hovertemplate=(
+                            f"{label}<br>"
+                            "Date: %{x}<br>"
+                            "Time: %{customdata}<extra></extra>"
+                        ),
+                    ))
 
-                # Sort tick_vals and tick_text together by value
-                paired = sorted(zip(tick_vals, tick_text), key=lambda p: p[0])
-                tick_vals = [p[0] for p in paired]
-                tick_text = [p[1] for p in paired]
+                    # Add National/International Master and Level 1 reference lines from standards
+                    # Use LC_STANDARDS for LC charts and SC_STANDARDS for SC charts
+                    if course_key == "LC":
+                        standards_source = LC_STANDARDS
+                    elif course_key == "SC":
+                        standards_source = SC_STANDARDS
+                    else:
+                        # Unknown course: try LC first, then SC
+                        standards_source = LC_STANDARDS
 
-                fig.update_layout(
-                    title=label,
-                    yaxis_title="Time",
-                    xaxis_title="Date",
-                    showlegend=False,
-                    hovermode="x unified",
-                )
-                fig.update_yaxes(
-                    tickvals=tick_vals,
-                    ticktext=tick_text,
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                    std_match = next((s for s in standards_source if s["Event"].lower() == event_label.lower()), None)
+                    if std_match is None and course_key == "Unknown":
+                        std_match = next((s for s in SC_STANDARDS if s["Event"].lower() == event_label.lower()), None)
+                    nat_master_secs = 0
+                    int_master_secs = 0
+                    level1_secs = 0
+                    if std_match:
+                        nat_master_secs = time_to_seconds(std_match["National Master"])
+                        int_master_secs = time_to_seconds(std_match["International Master"])
+                        level1_secs = time_to_seconds(std_match["Level 1"])
+                        if nat_master_secs > 0:
+                            fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
+                                          annotation_text="National Master (运动健将)",
+                                          annotation_position="top left",
+                                          annotation_font_size=11)
+                        if int_master_secs > 0:
+                            fig.add_hline(y=int_master_secs, line_dash="dash", line_color="gold",
+                                          annotation_text="International Master (国际级健将)",
+                                          annotation_position="top left",
+                                          annotation_font_size=11)
+                        if level1_secs > 0:
+                            fig.add_hline(y=level1_secs, line_dash="dash", line_color="cyan",
+                                          annotation_text="Level 1 (一级)",
+                                          annotation_position="top left",
+                                          annotation_font_size=11)
+
+                    # Generate formatted Y-axis tick labels in MM:SS.ss
+                    y_min = min(times_sec)
+                    y_max = max(times_sec)
+                    # Extend range to include reference lines if present
+                    if std_match:
+                        if nat_master_secs > 0:
+                            y_min = min(y_min, nat_master_secs)
+                            y_max = max(y_max, nat_master_secs)
+                        if int_master_secs > 0:
+                            y_min = min(y_min, int_master_secs)
+                            y_max = max(y_max, int_master_secs)
+                        if level1_secs > 0:
+                            y_min = min(y_min, level1_secs)
+                            y_max = max(y_max, level1_secs)
+                    tick_count = 6
+                    tick_step = (y_max - y_min) / (tick_count - 1)
+                    tick_vals = [y_min + i * tick_step for i in range(tick_count)]
+                    tick_text = [format_time_axis(v) for v in tick_vals]
+
+                    # Add standard values to tick marks
+                    if std_match:
+                        if nat_master_secs > 0:
+                            tick_vals.append(nat_master_secs)
+                            tick_text.append(format_time_axis(nat_master_secs))
+                        if int_master_secs > 0:
+                            tick_vals.append(int_master_secs)
+                            tick_text.append(format_time_axis(int_master_secs))
+                        if level1_secs > 0:
+                            tick_vals.append(level1_secs)
+                            tick_text.append(format_time_axis(level1_secs))
+
+                    # Sort tick_vals and tick_text together by value
+                    paired = sorted(zip(tick_vals, tick_text), key=lambda p: p[0])
+                    tick_vals = [p[0] for p in paired]
+                    tick_text = [p[1] for p in paired]
+
+                    fig.update_layout(
+                        title=label,
+                        yaxis_title="Time",
+                        xaxis_title="Date",
+                        showlegend=False,
+                        hovermode="x unified",
+                    )
+                    fig.update_yaxes(
+                        tickvals=tick_vals,
+                        ticktext=tick_text,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
         
             if charts_shown == 0:
                 st.info("Need more than 2 records per stroke/distance combination to show time development.")
@@ -981,25 +1063,52 @@ elif st.session_state.page == "Insights":
     if not events:
         st.info("Upload race data to generate insights.")
     else:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Trend Insights")
-            insights = InsightGenerator.generate_trend_insights()
+        # --- Trend Insights (table format, sorted by improvement % descending) ---
+        st.subheader("Trend Insights")
+        insights = InsightGenerator.generate_trend_insights()
+        # Filter out info-only messages (no structured data)
+        structured_insights = [i for i in insights if "event" in i]
+        if structured_insights:
+            # Sort by improvement percentage descending (biggest improvement first)
+            structured_insights.sort(key=lambda x: x["improvement_pct"], reverse=True)
+            trend_rows = []
+            for ins in structured_insights:
+                trend_rows.append({
+                    "Event": ins["event"],
+                    "Improvement %": f"{ins['improvement_pct']:+.1f}%",
+                    "From": ins["from_time"],
+                    "From Date": ins["from_date"],
+                    "To": ins["to_time"],
+                    "To Date": ins["to_date"],
+                })
+            trend_df = pd.DataFrame(trend_rows)
+            st.dataframe(trend_df, use_container_width=True, hide_index=True)
+        else:
             for insight in insights:
                 icon = {"positive": "🟢", "warning": "🟡", "neutral": "🔵", "info": "ℹ️"}.get(insight["type"], "ℹ️")
                 st.markdown(f"{icon} {insight['message']}")
-        
-        with col2:
-            st.subheader("Strengths & Weaknesses")
-            sw = InsightGenerator.identify_strengths_weaknesses()
-            if "error" not in sw:
-                st.markdown(f"**💪 Strongest Stroke:** {sw.get('strongest', 'N/A').title()}")
-                st.markdown(f"**🎯 Focus Area:** {sw.get('weakest', 'N/A').title()}")
-                
-                st.markdown("**Pace Analysis:**")
-                for stroke, pace in sw.get("stroke_paces", {}).items():
-                    st.markdown(f"- {stroke.title()}: {pace}")
+
+        st.markdown("---")
+
+        # --- Strengths & Weaknesses (table format) ---
+        st.subheader("Strengths & Weaknesses")
+        sw = InsightGenerator.identify_strengths_weaknesses()
+        if "error" not in sw:
+            # Summary table: Strongest Stroke and Focus Area
+            summary_rows = [
+                {"Metric": "💪 Strongest Stroke", "Value": (sw.get('strongest') or 'N/A').title()},
+                {"Metric": "🎯 Focus Area", "Value": (sw.get('weakest') or 'N/A').title()},
+            ]
+            st.table(pd.DataFrame(summary_rows))
+
+            # Pace Analysis table
+            st.markdown("**Pace Analysis**")
+            pace_rows = [
+                {"Stroke": stroke.title(), "Pace (sec/m)": pace}
+                for stroke, pace in sw.get("stroke_paces", {}).items()
+            ]
+            if pace_rows:
+                st.dataframe(pd.DataFrame(pace_rows), use_container_width=True, hide_index=True)
         
         st.markdown("---")
         
