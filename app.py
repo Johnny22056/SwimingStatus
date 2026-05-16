@@ -73,17 +73,79 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Hide Streamlit default menu and deploy button
+# Hide Streamlit default menu and deploy button + global styling
 st.markdown("""
 <style>
 #MainMenu {visibility: hidden;}
 .stDeployButton {display: none;}
+
+section[data-testid="stSidebar"] button:hover {
+    background-color: #27272A;
+    color: #06B6D4;
+    border-color: #06B6D4;
+    transition: all 0.3s ease;
+}
+
+h1 { letter-spacing: -0.5px; }
+h2 { letter-spacing: -0.3px; }
+
+section[data-testid="stSidebar"] .stCaption {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 11px;
+}
+
+[data-testid="stDataFrame"] thead tr th {
+    background-color: #27272A !important;
+    color: #FAFAFA !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+[data-testid="stDataFrame"] tbody tr:hover td {
+    background-color: #18181B !important;
+    transition: background-color 0.2s ease;
+}
+
+[data-testid="stDataFrame"] td {
+    border-color: #3F3F46 !important;
+}
+
+[data-testid="stButton"] > button {
+    background-color: #18181B;
+    color: #FAFAFA;
+    border: 1px solid #3F3F46;
+    border-radius: 8px;
+    min-height: 44px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+[data-testid="stButton"] > button:hover {
+    background-color: #06B6D4;
+    color: #09090B;
+    border-color: #06B6D4;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+}
+
+[data-testid="stButton"] > button:focus {
+    outline: 2px solid #06B6D4;
+    outline-offset: 2px;
+}
+
+[data-testid="stTextInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+    border-color: #06B6D4 !important;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
 if "page" not in st.session_state:
-    st.session_state.page = "Analytics"
+    st.session_state.page = "Performance"
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "last_extraction" not in st.session_state:
@@ -115,7 +177,7 @@ with st.sidebar:
 
     # Section 1: Analysis
     st.caption("Analysis")
-    main_pages = ["National Standard", "Analytics", "Insights", "Q&A"]
+    main_pages = ["Benchmarks", "Performance", "Insights", "AI Coach"]
     for page in main_pages:
         if st.button(page, key=f"nav_{page}", use_container_width=True,
                      type="primary" if st.session_state.page == page else "secondary"):
@@ -126,7 +188,7 @@ with st.sidebar:
 
     # Section 2: Tools
     st.caption("Tools")
-    tool_pages = ["Import", "Records", "Body Metrics"]
+    tool_pages = ["Data Import", "Race Log", "Body Metrics"]
     for page in tool_pages:
         if st.button(page, key=f"nav_{page}", use_container_width=True,
                      type="primary" if st.session_state.page == page else "secondary"):
@@ -138,7 +200,7 @@ with st.sidebar:
 
 
 # ==================== IMPORT PAGE ====================
-if st.session_state.page == "Import":
+if st.session_state.page == "Data Import":
     st.header("📥 Import Screenshots")
     st.markdown("Upload or batch-import swimming meet screenshots to extract and analyze data.")
     
@@ -570,7 +632,7 @@ if st.session_state.page == "Import":
 
 
 # ==================== RECORDS PAGE ====================
-elif st.session_state.page == "Records":
+elif st.session_state.page == "Race Log":
     st.header("📋 All Swim Records")
     
     events = DataStore.load_swim_events()
@@ -719,20 +781,29 @@ elif st.session_state.page == "Body Metrics":
 
 
 # ==================== ANALYTICS PAGE ====================
-elif st.session_state.page == "Analytics":
+elif st.session_state.page == "Performance":
     st.title("📊 Performance Analytics")
     
     events = DataStore.load_swim_events()
     if not events:
         st.info("No race data yet. Upload screenshots to see analytics.")
     else:
-        # Summary cards
+        # Summary KPI cards
         summary = PerformanceAnalytics.get_dashboard_summary()
+        kpi_data = [
+            ("Total Meets", summary["total_meets"]),
+            ("Total Events", summary["total_events"]),
+            ("Personal Bests", summary["personal_bests"]),
+            ("Strokes", len(summary["strokes"])),
+        ]
         cols = st.columns(4)
-        cols[0].metric("Total Meets", summary["total_meets"])
-        cols[1].metric("Total Events", summary["total_events"])
-        cols[2].metric("Personal Bests", summary["personal_bests"])
-        cols[3].metric("Strokes", len(summary["strokes"]))
+        for col, (label, value) in zip(cols, kpi_data):
+            col.markdown(f"""
+            <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{label}</div>
+                <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -935,6 +1006,33 @@ elif st.session_state.page == "Analytics":
                         nat_master_secs = time_to_seconds(std_match["National Master"])
                         int_master_secs = time_to_seconds(std_match["International Master"])
                         level1_secs = time_to_seconds(std_match["Level 1"])
+
+                        # Build subtitle with benchmark info and gap to nearest standard
+                        pb_secs = min(times_sec)
+                        subtitle_parts = []
+                        if nat_master_secs > 0:
+                            subtitle_parts.append(f"National Master: {std_match['National Master']}")
+                        if int_master_secs > 0:
+                            subtitle_parts.append(f"Int'l Master: {std_match['International Master']}")
+                        # Find nearest standard not yet beaten (Level 1 → National Master → Int'l Master)
+                        standards_ladder = []
+                        if level1_secs > 0:
+                            standards_ladder.append(("Level 1", level1_secs))
+                        if nat_master_secs > 0:
+                            standards_ladder.append(("National Master", nat_master_secs))
+                        if int_master_secs > 0:
+                            standards_ladder.append(("Int'l Master", int_master_secs))
+                        nearest_target = None
+                        for std_name, std_secs in standards_ladder:
+                            if pb_secs > std_secs:
+                                nearest_target = (std_name, std_secs)
+                                break
+                        if nearest_target:
+                            gap = pb_secs - nearest_target[1]
+                            subtitle_parts.append(f"Gap to {nearest_target[0]}: -{gap:.2f}s")
+                        if subtitle_parts:
+                            st.caption(" | ".join(subtitle_parts))
+
                         if nat_master_secs > 0:
                             fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
                                           annotation_text="National Master (运动健将)",
@@ -1045,8 +1143,8 @@ elif st.session_state.page == "Analytics":
 
 
 # ==================== NATIONAL STANDARD PAGE ====================
-elif st.session_state.page == "National Standard":
-    st.header("National Standard")
+elif st.session_state.page == "Benchmarks":
+    st.header("Benchmarks")
     st.caption("Chinese Female National Swimming Standards (Effective 2025-01-01)")
     st.caption("Source: Chinese Swimming Association")
 
@@ -1223,7 +1321,7 @@ elif st.session_state.page == "Insights":
 
 
 # ==================== Q&A PAGE ====================
-elif st.session_state.page == "Q&A":
+elif st.session_state.page == "AI Coach":
     st.title("💬 Ask About Sunny's Swimming")
     
     st.markdown("Ask questions like:")

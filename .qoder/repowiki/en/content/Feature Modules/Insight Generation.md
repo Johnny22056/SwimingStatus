@@ -14,20 +14,30 @@
 - [requirements.txt](file://requirements.txt)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated Insights tab layout section to reflect the new sequential layout with sorted trends
+- Enhanced UI integration documentation to include structured table presentations
+- Added documentation for the new trend sorting mechanism by improvement percentage
+- Updated workflow diagrams to show the improved sequential presentation format
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [UI Layout and Presentation](#ui-layout-and-presentation)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document explains the insight generation module that powers automated trend analysis and training recommendations for swimming performance. It covers the InsightGenerator class algorithms for trend identification, performance pattern recognition, and recommendation logic; the integration with the analytics module for data-driven insights; and the storage system for historical data analysis. It also documents the insight categorization system (performance trends, training suggestions, and potential assessment indicators), recommendation algorithms for workout modifications and pacing strategies, and practical workflows for generating insights from real-world data.
+
+**Updated** The Insights tab now features a complete layout overhaul with sequential presentation format and sorted trends for improved readability and user comprehension.
 
 ## Project Structure
 The insight generation module is part of a larger swimming analytics platform. The relevant components are organized as follows:
@@ -36,7 +46,7 @@ The insight generation module is part of a larger swimming analytics platform. T
 - Validation utilities normalize and validate time formats and required fields.
 - Analytics offers dataframes and visualizations derived from stored events.
 - InsightGenerator orchestrates trend analysis, strength/weakness detection, potential assessment, and training suggestions.
-- The Streamlit app integrates InsightGenerator into the UI and exposes insights to users.
+- The Streamlit app integrates InsightGenerator into the UI and exposes insights to users with enhanced sequential layouts.
 
 ```mermaid
 graph TB
@@ -52,7 +62,7 @@ subgraph "Insight Layer"
 I["insights.py<br/>InsightGenerator"]
 end
 subgraph "App Integration"
-APP["app.py<br/>Streamlit UI"]
+APP["app.py<br/>Streamlit UI<br/>Sequential Layout"]
 end
 M --> S
 S --> V
@@ -70,7 +80,7 @@ I --> APP
 - [app.py:321-370](file://app.py#L321-L370)
 
 **Section sources**
-- [README.md:1-63](file://README.md#L1-L63)
+- [README.md:1-66](file://README.md#L1-L66)
 - [requirements.txt:1-10](file://requirements.txt#L1-L10)
 
 ## Core Components
@@ -345,12 +355,66 @@ ScreenshotIndex --> Config : "uses file paths"
 - [storage.py:10-107](file://src/storage.py#L10-L107)
 - [config.py:10-14](file://src/config.py#L10-L14)
 
+## UI Layout and Presentation
+
+**Updated** The Insights tab now features a complete layout overhaul with sequential presentation format designed for improved readability and user comprehension.
+
+### Sequential Layout Structure
+The Insights tab implements a structured sequential layout that guides users through performance analysis in a logical flow:
+
+1. **Trend Insights Section** - Presents performance improvements in a sorted table format
+2. **Strengths & Weaknesses Section** - Shows stroke analysis with pace comparisons
+3. **Potential Assessment Section** - Displays overall trajectory and recommendations
+4. **Training Suggestions Section** - Provides actionable drill recommendations
+
+### Trend Insights Presentation
+The trend insights are now presented with enhanced sorting and structured formatting:
+
+- **Sorted by Improvement Percentage**: Trends are automatically sorted in descending order by improvement percentage
+- **Structured Table Format**: Uses pandas DataFrame for clear, tabular presentation
+- **Key Metrics Display**: Shows event name, improvement percentage, and time comparison
+- **Fallback Message Handling**: Gracefully handles insufficient data scenarios
+
+```mermaid
+flowchart TD
+Start(["Insights Tab Load"]) --> CheckData{"Events Available?"}
+CheckData --> |No| ShowMessage["Show Info Message"]
+CheckData --> |Yes| GetInsights["Call generate_trend_insights()"]
+GetInsights --> FilterInsights["Filter Structured Insights"]
+FilterInsights --> SortInsights["Sort by Improvement % Descending"]
+SortInsights --> CreateTable["Create Structured Table"]
+CreateTable --> DisplayTable["Display Sorted Trends Table"]
+ShowMessage --> End(["Complete"])
+DisplayTable --> End
+```
+
+**Diagram sources**
+- [app.py:1156-1179](file://app.py#L1156-L1179)
+- [insights.py:18-90](file://src/insights.py#L18-L90)
+
+### Strengths and Weaknesses Presentation
+The stroke analysis is presented through structured tables:
+
+- **Summary Table**: Shows strongest stroke and focus area in a compact format
+- **Pace Analysis Table**: Displays average pace per stroke with clear formatting
+- **Consistent Formatting**: Uses standardized table layouts across sections
+
+### Enhanced User Experience
+The new layout provides several improvements:
+- **Improved Readability**: Structured tables make data easier to scan and understand
+- **Logical Flow**: Sequential presentation guides users through the analysis process
+- **Better Data Visualization**: Tables highlight key metrics and trends effectively
+- **Enhanced Comprehension**: Sorted trends help users quickly identify significant improvements
+
+**Section sources**
+- [app.py:1148-1223](file://app.py#L1148-L1223)
+
 ### UI Integration and Workflows
-The Streamlit app integrates InsightGenerator into the “Insights” page, displaying:
-- Trend insights with categorized messages and data points.
-- Strengths and weaknesses with pace breakdowns.
-- Potential assessment metrics and recommendations.
-- Training suggestions with drill lists and priorities.
+The Streamlit app integrates InsightGenerator into the "Insights" page with the new sequential layout, displaying:
+- Trend insights with categorized messages and structured data points
+- Strengths and weaknesses with pace breakdowns in table format
+- Potential assessment metrics and recommendations
+- Training suggestions with drill lists and priorities
 
 ```mermaid
 sequenceDiagram
@@ -362,14 +426,14 @@ User->>UI : "Open Insights page"
 UI->>Gen : "generate_trend_insights()"
 Gen->>Store : "load_swim_events()"
 Store-->>Gen : "events"
-Gen-->>UI : "trend insights"
+Gen-->>UI : "trend insights (structured)"
 UI->>Gen : "identify_strengths_weaknesses()"
-Gen-->>UI : "strengths/weaknesses"
+Gen-->>UI : "strengths/weaknesses (table format)"
 UI->>Gen : "assess_potential()"
 Gen-->>UI : "assessment + recommendation"
 UI->>Gen : "get_training_suggestions()"
 Gen-->>UI : "training suggestions"
-UI-->>User : "Render insights and suggestions"
+UI-->>User : "Render sequential layout with sorted trends"
 ```
 
 **Diagram sources**
@@ -422,6 +486,7 @@ VAL --> CFG
   - Training suggestions: O(S) for stroke mapping where S is number of strokes.
 - Memory usage: Dataframes and lists scale with the number of events; consider pagination or filtering for very large datasets.
 - I/O: JSON reads/writes are fast for typical datasets; ensure file paths exist via configuration.
+- **Updated** Sequential layout optimization: The new table-based presentation maintains efficient memory usage while improving user experience.
 
 [No sources needed since this section provides general guidance]
 
@@ -442,6 +507,10 @@ Common issues and resolutions:
   - Symptom: Missing charts or empty dashboards.
   - Cause: No events loaded.
   - Resolution: Confirm DataStore is initialized and events are persisted.
+- **Updated** Layout issues:
+  - Symptom: Trends not appearing in sorted order or table format.
+  - Cause: Insufficient structured insights data.
+  - Resolution: Ensure enough events exist for trend analysis; check that events contain valid time data.
 
 **Section sources**
 - [insights.py:20-21](file://src/insights.py#L20-L21)
@@ -449,7 +518,7 @@ Common issues and resolutions:
 - [storage.py:14-27](file://src/storage.py#L14-L27)
 
 ## Conclusion
-The insight generation module provides a robust, data-driven approach to analyzing swimming performance trends, identifying strengths and weaknesses, assessing potential, and offering actionable training suggestions. By leveraging grouped time series analysis, normalized stroke paces, and simple heuristics, it delivers clear, grounded insights suitable for both beginners and advanced swimmers. The modular design ensures easy extension with additional metrics, machine learning models, or richer visualizations.
+The insight generation module provides a robust, data-driven approach to analyzing swimming performance trends, identifying strengths and weaknesses, assessing potential, and offering actionable training suggestions. By leveraging grouped time series analysis, normalized stroke paces, and simple heuristics, it delivers clear, grounded insights suitable for both beginners and advanced swimmers. The recent layout overhaul enhances user experience through sequential presentation and sorted trend visualization, making performance patterns more accessible and comprehensible. The modular design ensures easy extension with additional metrics, machine learning models, or richer visualizations.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -511,3 +580,15 @@ The insight generation module aligns with the specification requirements:
 
 **Section sources**
 - [spec.md:1-30](file://openspec/changes/sunny-swim-analysis-platform/specs/insight-generation/spec.md#L1-L30)
+
+### Layout Enhancement Details
+**Updated** The Insights tab layout enhancement includes:
+
+- **Sequential Layout Design**: Users now follow a logical progression through trend analysis, stroke evaluation, assessment, and recommendations
+- **Sorted Trend Presentation**: Trends are automatically sorted by improvement percentage, making significant improvements immediately visible
+- **Structured Table Format**: All insights are presented in consistent table formats for better readability and comparison
+- **Enhanced User Experience**: The new layout improves comprehension of swimming performance patterns through clear visual hierarchy
+
+**Section sources**
+- [app.py:1148-1223](file://app.py#L1148-L1223)
+- [insights.py:18-90](file://src/insights.py#L18-L90)
