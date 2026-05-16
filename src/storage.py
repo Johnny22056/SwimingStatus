@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from src.models import SwimEvent, BodyMetrics
-from src.config import SWIM_EVENTS_FILE, BODY_METRICS_FILE, SCREENSHOT_INDEX_FILE
+from src.config import SWIM_EVENTS_FILE, BODY_METRICS_FILE, SCREENSHOT_INDEX_FILE, apply_course_override
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,10 @@ class DataStore:
     @classmethod
     def load_swim_events(cls) -> List[SwimEvent]:
         data = cls._load_json(SWIM_EVENTS_FILE)
-        return [SwimEvent.from_dict(item) for item in data]
+        events = [SwimEvent.from_dict(item) for item in data]
+        for event in events:
+            event.course = apply_course_override(event.meet_name, event.course)
+        return events
 
     @classmethod
     def save_swim_events(cls, events: List[SwimEvent]) -> None:
@@ -75,6 +78,7 @@ class DataStore:
             (True, "") if successfully added.
             (False, "duplicate") if skipped as duplicate.
         """
+        event.course = apply_course_override(event.meet_name, event.course)
         events = cls.load_swim_events()
         if cls._is_duplicate_event(event, events):
             logger.info("Duplicate event skipped: %s %dm %s on %s",

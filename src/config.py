@@ -46,3 +46,20 @@ SWIMMING_TERMS = ["swim", "stroke", "time", "race", "meet", "freestyle", "backst
 # Time format regex patterns
 TIME_FORMAT_MM_SS = r"^\d{1,2}:\d{2}\.\d{2}$"
 TIME_FORMAT_SS = r"^\d{1,2}\.\d{2}$"
+
+# Internal metadata: override course for meets where OCR may extract wrong course info
+MEET_COURSE_OVERRIDES: dict[str, str] = {
+    "CWSC+Millfield 2024 Int'l Open (Heats)": "SC",
+    "CWSC+Millfield 2024 Int'l Open (Finals)": "SC",
+}
+
+
+def apply_course_override(meet_name: str, course: str) -> str:
+    """Return the correct course for a meet, applying override if matched (case-insensitive)."""
+    meet_lower = meet_name.strip().lower()
+    for override_meet, override_course in MEET_COURSE_OVERRIDES.items():
+        if override_meet.lower() == meet_lower:
+            if course.upper() != override_course.upper():
+                logger.info("Course override applied: '%s' %s -> %s", meet_name, course, override_course)
+            return override_course
+    return course

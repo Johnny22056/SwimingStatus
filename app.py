@@ -140,6 +140,14 @@ section[data-testid="stSidebar"] .stCaption {
     border-color: #06B6D4 !important;
     box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
 }
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #18181B !important;
+    border-color: #3F3F46 !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -839,54 +847,79 @@ elif st.session_state.page == "Performance":
             pb_df["_sort"] = pb_df.apply(_pb_sort_key, axis=1)
             pb_df = pb_df.sort_values("_sort").drop(columns=["_sort"]).reset_index(drop=True)
             pb_df["Event"] = pb_df["distance"].astype(str) + "m " + pb_df["stroke"].str.title()
-            display_cols = ["Event", "time", "date", "meet_name"]
-            display_rename = {"time": "Time", "date": "Date", "meet_name": "Meet"}
+
+            def _compute_gap_to_nm(row, standards):
+                """Compute gap between PB time and National Master standard."""
+                event_name = row["Event"]
+                # Handle IM uppercase matching
+                event_lookup = event_name.replace(" Im", " IM")
+                std_match = next((s for s in standards if s["Event"].lower() == event_lookup.lower()), None)
+                if not std_match:
+                    return "N/A"
+                nm_secs = time_to_seconds(std_match["National Master"])
+                pb_secs = time_to_seconds(row["time"])
+                if nm_secs <= 0 or pb_secs <= 0:
+                    return "N/A"
+                gap = pb_secs - nm_secs
+                return f"{gap:+.2f}s"
 
             lc_df = pb_df[pb_df["course"] == "LC"].reset_index(drop=True)
             sc_df = pb_df[pb_df["course"] == "SC"].reset_index(drop=True)
             other_df = pb_df[~pb_df["course"].isin(["LC", "SC"])].reset_index(drop=True)
 
+            # Add Gap to NM column for LC and SC tables
             if not lc_df.empty:
-                st.subheader("PB - LC")
-                st.caption("Click a row to view its source screenshot")
-                lc_selection = st.dataframe(
-                    lc_df[display_cols].rename(columns=display_rename),
-                    use_container_width=True, hide_index=True,
-                    selection_mode="single-row", on_select="rerun",
-                    key="pb_lc_table",
-                )
-                lc_selected = lc_selection.selection.rows if lc_selection and lc_selection.selection else []
-                if lc_selected:
-                    idx = lc_selected[0]
-                    src = lc_df.iloc[idx].get("source_screenshot", "")
-                    if src:
-                        _show_pb_screenshot(src, lc_df.iloc[idx]["Event"])
-                    else:
-                        st.info("No source screenshot available for this PB record.")
+                lc_df["Gap to NM"] = lc_df.apply(lambda r: _compute_gap_to_nm(r, LC_STANDARDS), axis=1)
+            if not sc_df.empty:
+                sc_df["Gap to NM"] = sc_df.apply(lambda r: _compute_gap_to_nm(r, SC_STANDARDS), axis=1)
+
+            display_cols = ["Event", "time", "Gap to NM", "date", "meet_name"]
+            display_cols_no_gap = ["Event", "time", "date", "meet_name"]
+            display_rename = {"time": "Time", "Gap to NM": "Gap to NM", "date": "Date", "meet_name": "Meet"}
+
+            if not lc_df.empty:
+                with st.container(border=True):
+                    st.subheader("PB - LC")
+                    st.caption("Click a row to view its source screenshot")
+                    lc_selection = st.dataframe(
+                        lc_df[display_cols].rename(columns=display_rename),
+                        use_container_width=True, hide_index=True,
+                        selection_mode="single-row", on_select="rerun",
+                        key="pb_lc_table",
+                    )
+                    lc_selected = lc_selection.selection.rows if lc_selection and lc_selection.selection else []
+                    if lc_selected:
+                        idx = lc_selected[0]
+                        src = lc_df.iloc[idx].get("source_screenshot", "")
+                        if src:
+                            _show_pb_screenshot(src, lc_df.iloc[idx]["Event"])
+                        else:
+                            st.info("No source screenshot available for this PB record.")
 
             if not sc_df.empty:
-                st.subheader("PB - SC")
-                st.caption("Click a row to view its source screenshot")
-                sc_selection = st.dataframe(
-                    sc_df[display_cols].rename(columns=display_rename),
-                    use_container_width=True, hide_index=True,
-                    selection_mode="single-row", on_select="rerun",
-                    key="pb_sc_table",
-                )
-                sc_selected = sc_selection.selection.rows if sc_selection and sc_selection.selection else []
-                if sc_selected:
-                    idx = sc_selected[0]
-                    src = sc_df.iloc[idx].get("source_screenshot", "")
-                    if src:
-                        _show_pb_screenshot(src, sc_df.iloc[idx]["Event"])
-                    else:
-                        st.info("No source screenshot available for this PB record.")
+                with st.container(border=True):
+                    st.subheader("PB - SC")
+                    st.caption("Click a row to view its source screenshot")
+                    sc_selection = st.dataframe(
+                        sc_df[display_cols].rename(columns=display_rename),
+                        use_container_width=True, hide_index=True,
+                        selection_mode="single-row", on_select="rerun",
+                        key="pb_sc_table",
+                    )
+                    sc_selected = sc_selection.selection.rows if sc_selection and sc_selection.selection else []
+                    if sc_selected:
+                        idx = sc_selected[0]
+                        src = sc_df.iloc[idx].get("source_screenshot", "")
+                        if src:
+                            _show_pb_screenshot(src, sc_df.iloc[idx]["Event"])
+                        else:
+                            st.info("No source screenshot available for this PB record.")
 
             if not other_df.empty:
                 st.subheader("Personal Bests")
                 st.caption("Click a row to view its source screenshot")
                 other_selection = st.dataframe(
-                    other_df[display_cols].rename(columns=display_rename),
+                    other_df[display_cols_no_gap].rename(columns=display_rename),
                     use_container_width=True, hide_index=True,
                     selection_mode="single-row", on_select="rerun",
                     key="pb_other_table",
@@ -966,137 +999,138 @@ elif st.session_state.page == "Performance":
                         label = f"{event_label} ({course_key})"
                     else:
                         label = event_label
-                    st.subheader(label)
+                    with st.container(border=True):
+                        st.subheader(label)
 
-                    dates = [r["date"] for r in course_records]
-                    times_sec = [r["time_seconds"] for r in course_records]
-                    time_labels = [r["time"] for r in course_records]
+                        dates = [r["date"] for r in course_records]
+                        times_sec = [r["time_seconds"] for r in course_records]
+                        time_labels = [r["time"] for r in course_records]
 
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter(
-                        x=dates, y=times_sec,
-                        mode="lines+markers",
-                        name=label,
-                        line_shape="spline",
-                        customdata=time_labels,
-                        hovertemplate=(
-                            f"{label}<br>"
-                            "Date: %{x}<br>"
-                            "Time: %{customdata}<extra></extra>"
-                        ),
-                    ))
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(
+                            x=dates, y=times_sec,
+                            mode="lines+markers",
+                            name=label,
+                            line_shape="spline",
+                            customdata=time_labels,
+                            hovertemplate=(
+                                f"{label}<br>"
+                                "Date: %{x}<br>"
+                                "Time: %{customdata}<extra></extra>"
+                            ),
+                        ))
 
-                    # Add National/International Master and Level 1 reference lines from standards
-                    # Use LC_STANDARDS for LC charts and SC_STANDARDS for SC charts
-                    if course_key == "LC":
-                        standards_source = LC_STANDARDS
-                    elif course_key == "SC":
-                        standards_source = SC_STANDARDS
-                    else:
-                        # Unknown course: try LC first, then SC
-                        standards_source = LC_STANDARDS
+                        # Add National/International Master and Level 1 reference lines from standards
+                        # Use LC_STANDARDS for LC charts and SC_STANDARDS for SC charts
+                        if course_key == "LC":
+                            standards_source = LC_STANDARDS
+                        elif course_key == "SC":
+                            standards_source = SC_STANDARDS
+                        else:
+                            # Unknown course: try LC first, then SC
+                            standards_source = LC_STANDARDS
 
-                    std_match = next((s for s in standards_source if s["Event"].lower() == event_label.lower()), None)
-                    if std_match is None and course_key == "Unknown":
-                        std_match = next((s for s in SC_STANDARDS if s["Event"].lower() == event_label.lower()), None)
-                    nat_master_secs = 0
-                    int_master_secs = 0
-                    level1_secs = 0
-                    if std_match:
-                        nat_master_secs = time_to_seconds(std_match["National Master"])
-                        int_master_secs = time_to_seconds(std_match["International Master"])
-                        level1_secs = time_to_seconds(std_match["Level 1"])
+                        std_match = next((s for s in standards_source if s["Event"].lower() == event_label.lower()), None)
+                        if std_match is None and course_key == "Unknown":
+                            std_match = next((s for s in SC_STANDARDS if s["Event"].lower() == event_label.lower()), None)
+                        nat_master_secs = 0
+                        int_master_secs = 0
+                        level1_secs = 0
+                        if std_match:
+                            nat_master_secs = time_to_seconds(std_match["National Master"])
+                            int_master_secs = time_to_seconds(std_match["International Master"])
+                            level1_secs = time_to_seconds(std_match["Level 1"])
 
-                        # Build subtitle with benchmark info and gap to nearest standard
-                        pb_secs = min(times_sec)
-                        subtitle_parts = []
-                        if nat_master_secs > 0:
-                            subtitle_parts.append(f"National Master: {std_match['National Master']}")
-                        if int_master_secs > 0:
-                            subtitle_parts.append(f"Int'l Master: {std_match['International Master']}")
-                        # Find nearest standard not yet beaten (Level 1 → National Master → Int'l Master)
-                        standards_ladder = []
-                        if level1_secs > 0:
-                            standards_ladder.append(("Level 1", level1_secs))
-                        if nat_master_secs > 0:
-                            standards_ladder.append(("National Master", nat_master_secs))
-                        if int_master_secs > 0:
-                            standards_ladder.append(("Int'l Master", int_master_secs))
-                        nearest_target = None
-                        for std_name, std_secs in standards_ladder:
-                            if pb_secs > std_secs:
-                                nearest_target = (std_name, std_secs)
-                                break
-                        if nearest_target:
-                            gap = pb_secs - nearest_target[1]
-                            subtitle_parts.append(f"Gap to {nearest_target[0]}: -{gap:.2f}s")
-                        if subtitle_parts:
-                            st.caption(" | ".join(subtitle_parts))
+                            # Build subtitle with benchmark info and gap to nearest standard
+                            pb_secs = min(times_sec)
+                            subtitle_parts = []
+                            if nat_master_secs > 0:
+                                subtitle_parts.append(f"National Master: {std_match['National Master']}")
+                            if int_master_secs > 0:
+                                subtitle_parts.append(f"Int'l Master: {std_match['International Master']}")
+                            # Find nearest standard not yet beaten (Level 1 → National Master → Int'l Master)
+                            standards_ladder = []
+                            if level1_secs > 0:
+                                standards_ladder.append(("Level 1", level1_secs))
+                            if nat_master_secs > 0:
+                                standards_ladder.append(("National Master", nat_master_secs))
+                            if int_master_secs > 0:
+                                standards_ladder.append(("Int'l Master", int_master_secs))
+                            nearest_target = None
+                            for std_name, std_secs in standards_ladder:
+                                if pb_secs > std_secs:
+                                    nearest_target = (std_name, std_secs)
+                                    break
+                            if nearest_target:
+                                gap = pb_secs - nearest_target[1]
+                                subtitle_parts.append(f"Gap to {nearest_target[0]}: -{gap:.2f}s")
+                            if subtitle_parts:
+                                st.markdown(f'<span style="color: #06B6D4; font-size: 14px;">{" | ".join(subtitle_parts)}</span>', unsafe_allow_html=True)
 
-                        if nat_master_secs > 0:
-                            fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
-                                          annotation_text="National Master (运动健将)",
-                                          annotation_position="top left",
-                                          annotation_font_size=11)
-                        if int_master_secs > 0:
-                            fig.add_hline(y=int_master_secs, line_dash="dash", line_color="gold",
-                                          annotation_text="International Master (国际级健将)",
-                                          annotation_position="top left",
-                                          annotation_font_size=11)
-                        if level1_secs > 0:
-                            fig.add_hline(y=level1_secs, line_dash="dash", line_color="cyan",
-                                          annotation_text="Level 1 (一级)",
-                                          annotation_position="top left",
-                                          annotation_font_size=11)
+                            if nat_master_secs > 0:
+                                fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
+                                              annotation_text="National Master (运动健将)",
+                                              annotation_position="top left",
+                                              annotation_font_size=11)
+                            if int_master_secs > 0:
+                                fig.add_hline(y=int_master_secs, line_dash="dash", line_color="gold",
+                                              annotation_text="International Master (国际级健将)",
+                                              annotation_position="top left",
+                                              annotation_font_size=11)
+                            if level1_secs > 0:
+                                fig.add_hline(y=level1_secs, line_dash="dash", line_color="cyan",
+                                              annotation_text="Level 1 (一级)",
+                                              annotation_position="top left",
+                                              annotation_font_size=11)
 
-                    # Generate formatted Y-axis tick labels in MM:SS.ss
-                    y_min = min(times_sec)
-                    y_max = max(times_sec)
-                    # Extend range to include reference lines if present
-                    if std_match:
-                        if nat_master_secs > 0:
-                            y_min = min(y_min, nat_master_secs)
-                            y_max = max(y_max, nat_master_secs)
-                        if int_master_secs > 0:
-                            y_min = min(y_min, int_master_secs)
-                            y_max = max(y_max, int_master_secs)
-                        if level1_secs > 0:
-                            y_min = min(y_min, level1_secs)
-                            y_max = max(y_max, level1_secs)
-                    tick_count = 6
-                    tick_step = (y_max - y_min) / (tick_count - 1)
-                    tick_vals = [y_min + i * tick_step for i in range(tick_count)]
-                    tick_text = [format_time_axis(v) for v in tick_vals]
+                        # Generate formatted Y-axis tick labels in MM:SS.ss
+                        y_min = min(times_sec)
+                        y_max = max(times_sec)
+                        # Extend range to include reference lines if present
+                        if std_match:
+                            if nat_master_secs > 0:
+                                y_min = min(y_min, nat_master_secs)
+                                y_max = max(y_max, nat_master_secs)
+                            if int_master_secs > 0:
+                                y_min = min(y_min, int_master_secs)
+                                y_max = max(y_max, int_master_secs)
+                            if level1_secs > 0:
+                                y_min = min(y_min, level1_secs)
+                                y_max = max(y_max, level1_secs)
+                        tick_count = 6
+                        tick_step = (y_max - y_min) / (tick_count - 1)
+                        tick_vals = [y_min + i * tick_step for i in range(tick_count)]
+                        tick_text = [format_time_axis(v) for v in tick_vals]
 
-                    # Add standard values to tick marks
-                    if std_match:
-                        if nat_master_secs > 0:
-                            tick_vals.append(nat_master_secs)
-                            tick_text.append(format_time_axis(nat_master_secs))
-                        if int_master_secs > 0:
-                            tick_vals.append(int_master_secs)
-                            tick_text.append(format_time_axis(int_master_secs))
-                        if level1_secs > 0:
-                            tick_vals.append(level1_secs)
-                            tick_text.append(format_time_axis(level1_secs))
+                        # Add standard values to tick marks
+                        if std_match:
+                            if nat_master_secs > 0:
+                                tick_vals.append(nat_master_secs)
+                                tick_text.append(format_time_axis(nat_master_secs))
+                            if int_master_secs > 0:
+                                tick_vals.append(int_master_secs)
+                                tick_text.append(format_time_axis(int_master_secs))
+                            if level1_secs > 0:
+                                tick_vals.append(level1_secs)
+                                tick_text.append(format_time_axis(level1_secs))
 
-                    # Sort tick_vals and tick_text together by value
-                    paired = sorted(zip(tick_vals, tick_text), key=lambda p: p[0])
-                    tick_vals = [p[0] for p in paired]
-                    tick_text = [p[1] for p in paired]
+                        # Sort tick_vals and tick_text together by value
+                        paired = sorted(zip(tick_vals, tick_text), key=lambda p: p[0])
+                        tick_vals = [p[0] for p in paired]
+                        tick_text = [p[1] for p in paired]
 
-                    fig.update_layout(
-                        title=label,
-                        yaxis_title="Time",
-                        xaxis_title="Date",
-                        showlegend=False,
-                        hovermode="x unified",
-                    )
-                    fig.update_yaxes(
-                        tickvals=tick_vals,
-                        ticktext=tick_text,
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                        fig.update_layout(
+                            title=label,
+                            yaxis_title="Time",
+                            xaxis_title="Date",
+                            showlegend=False,
+                            hovermode="x unified",
+                        )
+                        fig.update_yaxes(
+                            tickvals=tick_vals,
+                            ticktext=tick_text,
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
         
             if charts_shown == 0:
                 st.info("Need more than 2 records per stroke/distance combination to show time development.")

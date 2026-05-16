@@ -110,10 +110,10 @@ end
 ```
 
 **Diagram sources**
-- [app.py:116-139](file://app.py#L116-L139)
+- [app.py:179-206](file://app.py#L179-L206)
 
 **Section sources**
-- [app.py:116-139](file://app.py#L116-L139)
+- [app.py:179-206](file://app.py#L179-L206)
 
 ## Core Components
 - QAService: Central component responsible for natural language processing, intent classification, context building, and response generation using Alibaba Cloud Model Studio. It maintains conversation history and provides specialized methods for direct data retrieval.
@@ -171,7 +171,7 @@ App-->>User : "Display response"
 ```
 
 **Diagram sources**
-- [app.py:1225-1257](file://app.py#L1225-L1257)
+- [app.py:1329-1360](file://app.py#L1329-L1360)
 - [src/qa_service.py:99-166](file://src/qa_service.py#L99-L166)
 - [src/storage.py:30-61](file://src/storage.py#L30-L61)
 - [src/analytics.py:114-139](file://src/analytics.py#L114-L139)
@@ -358,11 +358,11 @@ UI-->>UI : "Rerender"
 ```
 
 **Diagram sources**
-- [app.py:1225-1257](file://app.py#L1225-L1257)
+- [app.py:1329-1360](file://app.py#L1329-L1360)
 - [src/qa_service.py:99-166](file://src/qa_service.py#L99-L166)
 
 **Section sources**
-- [app.py:1225-1257](file://app.py#L1225-L1257)
+- [app.py:1329-1360](file://app.py#L1329-L1360)
 
 ## Dependency Analysis
 The Q&A system exhibits low coupling and high cohesion:
@@ -473,4 +473,4 @@ The Q&A system's relocation to the Analysis section as the final item provides s
 - **Strategic positioning**: Aligns Q&A with other analytical tools for comprehensive assistance
 
 **Section sources**
-- [app.py:116-139](file://app.py#L116-L139)
+- [app.py:179-206](file://app.py#L179-L206)
