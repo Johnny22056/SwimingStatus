@@ -115,7 +115,7 @@ with st.sidebar:
 
     # Section 1: Analysis
     st.caption("Analysis")
-    main_pages = ["National Standard", "Analytics", "Insights"]
+    main_pages = ["National Standard", "Analytics", "Insights", "Q&A"]
     for page in main_pages:
         if st.button(page, key=f"nav_{page}", use_container_width=True,
                      type="primary" if st.session_state.page == page else "secondary"):
@@ -126,7 +126,7 @@ with st.sidebar:
 
     # Section 2: Tools
     st.caption("Tools")
-    tool_pages = ["Import", "Records", "Body Metrics", "Q&A"]
+    tool_pages = ["Import", "Records", "Body Metrics"]
     for page in tool_pages:
         if st.button(page, key=f"nav_{page}", use_container_width=True,
                      type="primary" if st.session_state.page == page else "secondary"):
@@ -750,7 +750,7 @@ elif st.session_state.page == "Analytics":
             except ValueError:
                 return len(PB_ORDER)
         
-        @st.dialog("Source Screenshot", width="large")
+        @st.dialog("Source Screenshot", width="small")
         def _show_pb_screenshot(image_path, event_label):
             """Display the source screenshot for a PB record in a popup dialog."""
             img_path = Path(image_path)
@@ -759,7 +759,7 @@ elif st.session_state.page == "Analytics":
             if not img_path.exists():
                 img_path = Path(__file__).parent / image_path
             if img_path.exists():
-                st.image(str(img_path), caption=f"{event_label} — {img_path.name}")
+                st.image(str(img_path), caption=f"{event_label} — {img_path.name}", width=400)
             else:
                 st.warning(f"Screenshot file not found: {image_path}")
 
