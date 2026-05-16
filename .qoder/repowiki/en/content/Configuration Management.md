@@ -16,11 +16,10 @@
 
 ## Update Summary
 **Changes Made**
-- Added documentation for MEET_COURSE_OVERRIDES configuration dictionary
-- Documented the apply_course_override function for systematic course correction
-- Updated core components section to include course override functionality
-- Enhanced troubleshooting guide with course override scenarios
-- Added new section covering course override configuration and usage
+- Updated MEET_COURSE_OVERRIDES configuration to include new mapping for 'CWSC+Millfield 2023 Int'l Open'
+- Enhanced course override documentation with the latest mappings
+- Updated troubleshooting guide to include the new meet name scenario
+- Maintained existing documentation structure while reflecting the applied configuration change
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -61,7 +60,7 @@ Validation --> Config
 ```
 
 **Diagram sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 - [app.py:10-447](file://app.py#L10-L447)
 - [src/ocr_service.py:1-144](file://src/ocr_service.py#L1-L144)
 - [src/storage.py:1-166](file://src/storage.py#L1-L166)
@@ -71,7 +70,7 @@ Validation --> Config
 - [src/models.py:1-55](file://src/models.py#L1-L55)
 
 **Section sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 - [app.py:10-447](file://app.py#L10-L447)
 
 ## Core Components
@@ -99,7 +98,7 @@ Validation --> Config
 These values are loaded via environment variables with sensible defaults and are used across OCR, storage, research, and UI layers. The course override system provides systematic correction for OCR extraction errors.
 
 **Section sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 
 ## Architecture Overview
 The configuration system follows a central initialization pattern:
@@ -126,7 +125,7 @@ Storage->>Models : "Correct course types"
 ```
 
 **Diagram sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 - [src/storage.py:48-89](file://src/storage.py#L48-L89)
 - [src/models.py:7-29](file://src/models.py#L7-L29)
 - [app.py:441-446](file://app.py#L441-L446)
@@ -167,7 +166,10 @@ Validation and error handling:
 - MEET_COURSE_OVERRIDES
   - Purpose: Dictionary mapping specific meet names to correct course types (LC/SC).
   - Default: Contains predefined mappings for known problematic OCR extractions.
-  - Current mappings: "CWSC+Millfield 2024 Int'l Open (Heats)" → "SC", "CWSC+Millfield 2024 Int'l Open (Finals)" → "SC".
+  - Current mappings: 
+    - "CWSC+Millfield 2024 Int'l Open (Heats)" → "SC"
+    - "CWSC+Millfield 2024 Int'l Open (Finals)" → "SC"
+    - "CWSC+Millfield 2023 Int'l Open" → "SC"
   - Usage: Applied automatically when loading or adding swim events.
 - apply_course_override(meet_name: str, course: str) -> str
   - Purpose: Systematically corrects course types based on meet name matching.
@@ -181,7 +183,7 @@ Integration points:
 - Used in storage operations to ensure consistent course data.
 
 **Section sources**
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 - [src/storage.py:48-89](file://src/storage.py#L48-L89)
 
 ### Path Configuration
@@ -268,13 +270,13 @@ ApplyOverrides --> ReturnSuccess["Return success with corrected data"]
 **Diagram sources**
 - [src/ocr_service.py:55-116](file://src/ocr_service.py#L55-L116)
 - [src/validation.py:75-103](file://src/validation.py#L75-L103)
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 
 **Section sources**
 - [src/validation.py:7-23](file://src/validation.py#L7-L23)
 - [src/validation.py:75-103](file://src/validation.py#L75-L103)
 - [src/ocr_service.py:106-116](file://src/ocr_service.py#L106-L116)
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 
 ### Security Considerations for API Key Management
 - API keys are loaded from environment variables and should never be hardcoded.
@@ -297,7 +299,7 @@ ApplyOverrides --> ReturnSuccess["Return success with corrected data"]
 
 **Section sources**
 - [src/config.py:30-34](file://src/config.py#L30-L34)
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 
 ### Environment-Specific Setups and Examples
 - Typical setup:
@@ -315,7 +317,7 @@ ApplyOverrides --> ReturnSuccess["Return success with corrected data"]
 **Section sources**
 - [README.md:22-30](file://README.md#L22-L30)
 - [src/config.py:16-28](file://src/config.py#L16-L28)
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 
 ## Dependency Analysis
 Configuration dependencies across modules are straightforward and centralized, with course override functionality integrated into the storage layer.
@@ -341,7 +343,7 @@ App --> Config
 ```
 
 **Diagram sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 - [src/ocr_service.py:8](file://src/ocr_service.py#L8)
 - [src/storage.py:7](file://src/storage.py#L7)
 - [src/screenshot_manager.py:10](file://src/screenshot_manager.py#L10)
@@ -351,7 +353,7 @@ App --> Config
 - [app.py:10](file://app.py#L10)
 
 **Section sources**
-- [src/config.py:1-66](file://src/config.py#L1-L66)
+- [src/config.py:1-67](file://src/config.py#L1-L67)
 
 ## Performance Considerations
 - Environment variable lookup occurs at import time; this is negligible overhead.
@@ -381,6 +383,10 @@ Common configuration issues and resolutions:
   - Symptom: Course overrides not applied even with obvious OCR errors.
   - Resolution: Ensure meet name in OCR data exactly matches dictionary key (case-insensitive).
   - Debug: Verify exact meet name spelling and punctuation in OCR output.
+- CWSC+Millfield 2023 Int'l Open specific issue:
+  - Symptom: Events from this meet incorrectly show as LC course despite SC pool.
+  - Resolution: The system now automatically applies the override mapping for this meet.
+  - Debug: Check logs for "Course override applied: 'CWSC+Millfield 2023 Int'l Open' SC" message.
 
 Debugging techniques:
 - Inspect ALIBABA_CLOUD_API_KEY availability in the UI status panel.
@@ -395,11 +401,11 @@ Debugging techniques:
 - [src/ocr_service.py:103-104](file://src/ocr_service.py#L103-L104)
 - [app.py:441-446](file://app.py#L441-L446)
 - [src/validation.py:1-103](file://src/validation.py#L1-L103)
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 - [src/storage.py:48-89](file://src/storage.py#L48-L89)
 
 ## Conclusion
-The configuration management system is intentionally minimal and robust. It centralizes environment variables and path definitions, applies sensible defaults, and exposes clear validation and error handling. The addition of systematic course override functionality enhances data quality by providing automated corrections for OCR extraction errors. By following the recommended security practices and environment-specific setup steps, teams can reliably operate the platform across diverse environments while maintaining data integrity through intelligent course correction mechanisms.
+The configuration management system is intentionally minimal and robust. It centralizes environment variables and path definitions, applies sensible defaults, and exposes clear validation and error handling. The addition of systematic course override functionality enhances data quality by providing automated corrections for OCR extraction errors. The recent update to include 'CWSC+Millfield 2023 Int'l Open' as a recognized meet with SC course mapping demonstrates the system's adaptability to real-world OCR challenges. By following the recommended security practices and environment-specific setup steps, teams can reliably operate the platform across diverse environments while maintaining data integrity through intelligent course correction mechanisms.
 
 ## Appendices
 
@@ -435,7 +441,10 @@ The configuration management system is intentionally minimal and robust. It cent
   - Required: No
   - Default: Contains predefined mappings for known OCR issues
   - Format: {meet_name: correct_course}
-  - Example: {"CWSC+Millfield 2024 Int'l Open (Heats)": "SC"}
+  - Current Mappings:
+    - "CWSC+Millfield 2024 Int'l Open (Heats)": "SC"
+    - "CWSC+Millfield 2024 Int'l Open (Finals)": "SC"
+    - "CWSC+Millfield 2023 Int'l Open": "SC"
   - Usage: Automatic application during swim event processing
 - apply_course_override(meet_name: str, course: str) -> str
   - Purpose: Apply systematic course corrections based on meet name
@@ -444,7 +453,7 @@ The configuration management system is intentionally minimal and robust. It cent
   - Behavior: Case-insensitive meet name matching
 
 **Section sources**
-- [src/config.py:50-66](file://src/config.py#L50-L66)
+- [src/config.py:50-67](file://src/config.py#L50-L67)
 
 ### Data Directory Layout
 - data/

@@ -64,6 +64,7 @@ from src.validation import validate_swim_event_data, validate_field_types, valid
 from src.analytics import PerformanceAnalytics
 from src.insights import InsightGenerator
 from src.qa_service import QAService
+from src.theme import get_theme
 
 # Page config
 st.set_page_config(
@@ -73,80 +74,174 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize theme before global styling
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+theme = get_theme(st.session_state.theme)
+
 # Hide Streamlit default menu and deploy button + global styling
-st.markdown("""
+st.markdown(f"""
 <style>
-#MainMenu {visibility: hidden;}
-.stDeployButton {display: none;}
+#MainMenu {{visibility: hidden;}}
+.stDeployButton {{display: none;}}
 
-section[data-testid="stSidebar"] button:hover {
-    background-color: #27272A;
-    color: #06B6D4;
-    border-color: #06B6D4;
+[data-testid="stAppViewContainer"] {{
+    background-color: {theme['bg']};
+}}
+[data-testid="stSidebar"] {{
+    background-color: {theme['bg_secondary']};
+}}
+[data-testid="stHeader"] {{
+    background-color: {theme['bg']};
+}}
+
+section[data-testid="stSidebar"] button:hover {{
+    background-color: {theme['bg_card_end']};
+    color: {theme['accent']};
+    border-color: {theme['accent']};
     transition: all 0.3s ease;
-}
+}}
 
-h1 { letter-spacing: -0.5px; }
-h2 { letter-spacing: -0.3px; }
+h1 {{ letter-spacing: -0.5px; }}
+h2 {{ letter-spacing: -0.3px; }}
 
-section[data-testid="stSidebar"] .stCaption {
+section[data-testid="stSidebar"] .stCaption {{
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 11px;
-}
+}}
 
-[data-testid="stDataFrame"] thead tr th {
-    background-color: #27272A !important;
-    color: #FAFAFA !important;
+[data-testid="stDataFrame"] thead tr th {{
+    background-color: {theme['bg_card_end']} !important;
+    color: {theme['text']} !important;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.5px;
-}
+}}
 
-[data-testid="stDataFrame"] tbody tr:hover td {
-    background-color: #18181B !important;
+[data-testid="stDataFrame"] tbody tr:hover td {{
+    background-color: {theme['bg_secondary']} !important;
     transition: background-color 0.2s ease;
-}
+}}
 
-[data-testid="stDataFrame"] td {
-    border-color: #3F3F46 !important;
-}
-
-[data-testid="stButton"] > button {
-    background-color: #18181B;
-    color: #FAFAFA;
-    border: 1px solid #3F3F46;
+[data-testid="stButton"] > button {{
+    background-color: {theme['bg_secondary']};
+    color: {theme['text']};
+    border: 1px solid {theme['border']};
     border-radius: 8px;
     min-height: 44px;
     font-weight: 500;
     transition: all 0.3s ease;
-}
+}}
 
-[data-testid="stButton"] > button:hover {
-    background-color: #06B6D4;
-    color: #09090B;
-    border-color: #06B6D4;
+[data-testid="stButton"] > button:hover {{
+    background-color: {theme['accent']};
+    color: {theme['accent_dark_text']};
+    border-color: {theme['accent']};
     box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
-}
+}}
 
-[data-testid="stButton"] > button:focus {
-    outline: 2px solid #06B6D4;
+[data-testid="stButton"] > button:focus {{
+    outline: 2px solid {theme['accent']};
     outline-offset: 2px;
-}
+}}
 
 [data-testid="stTextInput"] input:focus,
-[data-testid="stTextArea"] textarea:focus {
-    border-color: #06B6D4 !important;
+[data-testid="stTextArea"] textarea:focus {{
+    border-color: {theme['accent']} !important;
     box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
-}
+}}
 
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #18181B !important;
-    border-color: #3F3F46 !important;
+[data-testid="stVerticalBlockBorderWrapper"] {{
+    background: {theme['bg_secondary']} !important;
+    border-color: {theme['border']} !important;
     border-radius: 12px !important;
     padding: 12px !important;
-}
+}}
+
+/* Force main content text color */
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3,
+[data-testid="stAppViewContainer"] p,
+[data-testid="stAppViewContainer"] span,
+[data-testid="stAppViewContainer"] label,
+[data-testid="stAppViewContainer"] .stMarkdown {{
+    color: {theme['text']} !important;
+}}
+
+/* Force sidebar text color */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label {{
+    color: {theme['text']} !important;
+}}
+
+/* Sidebar captions */
+[data-testid="stSidebar"] .stCaption,
+[data-testid="stSidebar"] .stCaption p {{
+    color: {theme['text_secondary']} !important;
+}}
+
+/* st.caption muted text */
+[data-testid="stAppViewContainer"] .stCaption,
+[data-testid="stAppViewContainer"] .stCaption p {{
+    color: {theme['text_muted']} !important;
+}}
+
+/* Table cell backgrounds and text */
+[data-testid="stDataFrame"] {{
+    background-color: {theme['bg']} !important;
+}}
+
+[data-testid="stDataFrame"] td {{
+    background-color: {theme['bg']} !important;
+    color: {theme['text']} !important;
+    border-color: {theme['border']} !important;
+}}
+
+/* Button text visibility */
+[data-testid="stButton"] > button {{
+    color: {theme['text']} !important;
+}}
+[data-testid="stButton"] > button:hover {{
+    color: {theme['accent_dark_text']} !important;
+}}
+
+/* Tab labels */
+[data-testid="stTabs"] button {{
+    color: {theme['text_secondary']} !important;
+}}
+[data-testid="stTabs"] button[aria-selected="true"] {{
+    color: {theme['accent']} !important;
+}}
+
+/* Selectbox / dropdown text */
+[data-testid="stSelectbox"] label,
+[data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    color: {theme['text']} !important;
+}}
+[data-testid="stSelectbox"] div[data-baseweb="select"] span {{
+    color: {theme['text']} !important;
+}}
+
+/* Multiselect */
+[data-testid="stMultiSelect"] label,
+[data-testid="stMultiSelect"] div[data-baseweb="select"] span {{
+    color: {theme['text']} !important;
+}}
+
+/* General select/option elements */
+[data-baseweb="select"] {{
+    color: {theme['text']} !important;
+}}
+[data-baseweb="select"] div {{
+    color: {theme['text']} !important;
+}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -181,6 +276,16 @@ def switch_page(page_name: str):
 # Sidebar Navigation
 with st.sidebar:
     st.title("🏊 Sunny's Swimming")
+
+    # Theme toggle
+    light_mode = st.toggle("☀️ Light Mode", value=(st.session_state.theme == "light"))
+    if light_mode and st.session_state.theme != "light":
+        st.session_state.theme = "light"
+        st.rerun()
+    elif not light_mode and st.session_state.theme != "dark":
+        st.session_state.theme = "dark"
+        st.rerun()
+
     st.divider()
 
     # Section 1: Analysis
@@ -221,9 +326,9 @@ if st.session_state.page == "Data Import":
         (uc4, "Duplicates", st.session_state.upload_duplicate_count),
     ]:
         _col.markdown(f"""
-        <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
-            <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{_value}</div>
+        <div style="background: linear-gradient(135deg, {theme['bg_card_start']} 0%, {theme['bg_card_end']} 100%); padding: 20px; border-radius: 12px; border-left: 4px solid {theme['accent']}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="color: {theme['text_secondary']}; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
+            <div style="color: {theme['accent']}; font-size: 30px; font-weight: bold;">{_value}</div>
         </div>
         """, unsafe_allow_html=True)
     if st.button("Reset Stats", key="reset_upload_stats"):
@@ -539,9 +644,9 @@ if st.session_state.page == "Data Import":
                         (col4, "Failed", len(failed)),
                     ]:
                         _col.markdown(f"""
-                        <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
-                            <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{_value}</div>
+                        <div style="background: linear-gradient(135deg, {theme['bg_card_start']} 0%, {theme['bg_card_end']} 100%); padding: 20px; border-radius: 12px; border-left: 4px solid {theme['accent']}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="color: {theme['text_secondary']}; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
+                            <div style="color: {theme['accent']}; font-size: 30px; font-weight: bold;">{_value}</div>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -839,10 +944,10 @@ elif st.session_state.page == "Body Metrics":
                             Current BMI: <span style="color: {color}; font-weight: bold; font-size: 20px;">{bmi:.1f}</span>
                             <span style="color: {color}; margin-left: 8px;">({category})</span>
                         </p>
-                        <p style="color: #A1A1AA; font-size: 14px;">
+                        <p style="color: {theme['text_secondary']}; font-size: 14px;">
                             {comment}
                         </p>
-                        <p style="color: #71717A; font-size: 12px; margin-top: 8px;">
+                        <p style="color: {theme['text_muted']}; font-size: 12px; margin-top: 8px;">
                             Note: BMI is a general indicator. For swimmers, body composition (muscle vs fat ratio)
                             is more relevant than BMI alone. Sunny's height-to-arm-span ratio and lean muscle mass
                             are key performance factors.
@@ -870,9 +975,9 @@ elif st.session_state.page == "Performance":
         cols = st.columns(4)
         for col, (label, value) in zip(cols, kpi_data):
             col.markdown(f"""
-            <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{label}</div>
-                <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{value}</div>
+            <div style="background: linear-gradient(135deg, {theme['bg_card_start']} 0%, {theme['bg_card_end']} 100%); padding: 20px; border-radius: 12px; border-left: 4px solid {theme['accent']}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="color: {theme['text_secondary']}; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{label}</div>
+                <div style="color: {theme['accent']}; font-size: 30px; font-weight: bold;">{value}</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -1128,7 +1233,7 @@ elif st.session_state.page == "Performance":
                                 gap = pb_secs - nearest_target[1]
                                 subtitle_parts.append(f"Gap to {nearest_target[0]}: -{gap:.2f}s")
                             if subtitle_parts:
-                                st.markdown(f'<span style="color: #06B6D4; font-size: 14px;">{" | ".join(subtitle_parts)}</span>', unsafe_allow_html=True)
+                                st.markdown(f'<span style="color: {theme["accent"]}; font-size: 14px;">{" | ".join(subtitle_parts)}</span>', unsafe_allow_html=True)
 
                             if nat_master_secs > 0:
                                 fig.add_hline(y=nat_master_secs, line_dash="dash", line_color="green",
@@ -1188,10 +1293,17 @@ elif st.session_state.page == "Performance":
                             xaxis_title="Date",
                             showlegend=False,
                             hovermode="x unified",
+                            plot_bgcolor=theme['plot_bg'],
+                            paper_bgcolor=theme['plot_paper_bg'],
+                            font=dict(color=theme['plot_font_color']),
                         )
                         fig.update_yaxes(
                             tickvals=tick_vals,
                             ticktext=tick_text,
+                            gridcolor=theme['plot_grid'],
+                        )
+                        fig.update_xaxes(
+                            gridcolor=theme['plot_grid'],
                         )
                         st.plotly_chart(fig, use_container_width=True)
         
@@ -1410,16 +1522,16 @@ elif st.session_state.page == "Insights":
                 ]
                 for col, (label, value) in zip(cols, kpi_items):
                     col.markdown(f"""
-<div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); 
-            padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; 
+<div style="background: linear-gradient(135deg, {theme['bg_card_start']} 0%, {theme['bg_card_end']} 100%); 
+            padding: 20px; border-radius: 12px; border-left: 4px solid {theme['accent']}; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase;">{label}</div>
-    <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{value}</div>
+    <div style="color: {theme['text_secondary']}; font-size: 12px; text-transform: uppercase;">{label}</div>
+    <div style="color: {theme['accent']}; font-size: 30px; font-weight: bold;">{value}</div>
 </div>
 """, unsafe_allow_html=True)
 
                 st.markdown("")
-                st.markdown(f'<span style="color: #06B6D4; font-size: 14px;">**Consistency:** {assessment["consistency"]}</span>', unsafe_allow_html=True)
+                st.markdown(f'<span style="color: {theme["accent"]}; font-size: 14px;">**Consistency:** {assessment["consistency"]}</span>', unsafe_allow_html=True)
                 st.info(f"📋 {assessment['recommendation']}")
 
         # --- Training Suggestions ---

@@ -18,11 +18,12 @@
 
 ## Update Summary
 **Changes Made**
-- **Updated Navigation Labels**: Changed from Analytics/Import/Records/National Standard/Q&A to Performance/Data Import/Race Log/Benchmarks/AI Coach
-- **Implemented Dark Theme**: Comprehensive dark theme styling with custom CSS including sidebar hover effects, button styling, and dataframe enhancements
-- **Enhanced Navigation Structure**: Restructured navigation into Analysis and Tools sections with improved visual hierarchy
-- **Modernized Visual Components**: Added gradient backgrounds, improved button styling, enhanced table interactions, and popup dialogs
-- **Updated Page Routing**: Migrated from seven pages to six pages with new naming conventions and improved user experience
+- **Enhanced UI Modernization**: Implemented bordered container layouts with `st.container(border=True)` across all major pages
+- **KPI Card Design**: Added gradient-styled KPI cards with bordered containers for data visualization
+- **Improved Visual Styling**: Enhanced table interactions with bordered containers and improved popup dialogs
+- **Course Filter Addition**: Added Course filter to Race Log page for better swim record organization
+- **BMI Commentary Panel**: Integrated BMI Commentary panel to Body Metrics page with color-coded health indicators
+- **Container-Based Layout**: Migrated from basic containers to bordered container layouts for consistent visual hierarchy
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -32,20 +33,22 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Dark Theme Implementation](#dark-theme-implementation)
 7. [Enhanced Navigation System](#enhanced-navigation-system)
-8. [Page Routing and Content](#page-routing-and-content)
-9. [Dependency Analysis](#dependency-analysis)
-10. [Performance Considerations](#performance-considerations)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+8. [Modernized Page Layouts](#modernized-page-layouts)
+9. [Container-Based UI Components](#container-based-ui-components)
+10. [Page Routing and Content](#page-routing-and-content)
+11. [Dependency Analysis](#dependency-analysis)
+12. [Performance Considerations](#performance-considerations)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
 
 ## Introduction
-This document provides comprehensive documentation for the main application controller (app.py) of the Swimming Data Analysis Platform. The controller orchestrates a modern Streamlit-based UI with six main pages: Performance, Data Import, Race Log, Benchmarks, Insights, and AI Coach. The application features a comprehensive dark theme implementation with custom CSS styling, enhanced navigation structure, and improved visual components. It manages session state across page navigations, coordinates UI interactions with backend services, and integrates external AI APIs for OCR and Q&A capabilities.
+This document provides comprehensive documentation for the main application controller (app.py) of the Swimming Data Analysis Platform. The controller orchestrates a modern Streamlit-based UI with six main pages: Performance, Data Import, Race Log, Benchmarks, Insights, and AI Coach. The application features a comprehensive dark theme implementation with custom CSS styling, enhanced navigation structure, and modernized visual components including bordered container layouts, KPI card designs, and improved visual styling across multiple pages.
 
-**Updated** Enhanced with dark theme implementation, custom CSS styling, and modernized navigation structure featuring Analysis and Tools sections with improved user experience and visual hierarchy.
+**Updated** Enhanced with modern UI design patterns featuring bordered container layouts, gradient-styled KPI cards, improved visual hierarchy, and specialized panels including Course filters and BMI commentary systems.
 
 ## Project Structure
 The application follows a modular architecture with a clear separation between UI orchestration (app.py) and domain services located under src/. Key directories and files:
-- app.py: Central Streamlit application controller and page router with dark theme implementation
+- app.py: Central Streamlit application controller and page router with modernized UI components
 - src/: Domain services and utilities
   - config.py: Configuration constants and environment variables
   - models.py: Data models for SwimEvent and BodyMetrics
@@ -61,7 +64,7 @@ The application follows a modular architecture with a clear separation between U
 
 ```mermaid
 graph TB
-A["app.py<br/>Streamlit Controller<br/>Dark Theme CSS"] --> B["src/config.py<br/>Configuration"]
+A["app.py<br/>Streamlit Controller<br/>Modernized UI Components"] --> B["src/config.py<br/>Configuration"]
 A --> C["src/models.py<br/>Data Models"]
 A --> D["src/storage.py<br/>Persistence Layer"]
 A --> E["src/screenshot_manager.py<br/>Screenshot Manager"]
@@ -75,7 +78,7 @@ L["README.md"] --> A
 ```
 
 **Diagram sources**
-- [app.py:1-1363](file://app.py#L1-L1363)
+- [app.py:1-1468](file://app.py#L1-L1468)
 - [src/config.py:1-29](file://src/config.py#L1-L29)
 - [src/models.py:1-55](file://src/models.py#L1-L55)
 - [src/storage.py:1-107](file://src/storage.py#L1-L107)
@@ -87,35 +90,35 @@ L["README.md"] --> A
 - [src/qa_service.py:1-174](file://src/qa_service.py#L1-L174)
 
 **Section sources**
-- [app.py:1-1363](file://app.py#L1-L1363)
+- [app.py:1-1468](file://app.py#L1-L1468)
 - [README.md:1-66](file://README.md#L1-L66)
 
 ## Core Components
 The application controller centers around several key components with modern UI enhancements:
 
-- **Dark Theme Implementation**: Comprehensive custom CSS styling with sidebar hover effects, button styling, and dataframe enhancements
-- **Enhanced Session State Management**: Initializes and maintains application state across page navigations and user interactions
-- **Structured Navigation System**: Implements six main pages organized into Analysis and Tools sections with improved visual hierarchy
-- **Modern Page Routing**: Uses session state to control visibility with updated page names and improved user experience
-- **Service Coordination**: Integrates OCR, analytics, research, insights, and Q&A services with enhanced styling
-- **Data Persistence**: Uses JSON-based storage for swim events, body metrics, and screenshot indices
-- **External API Integration**: Connects to Alibaba Cloud Model Studio for OCR and Q&A
-- **Enhanced Table Interactions**: Implements row selection capabilities with improved styling and popup dialogs
+- **Modernized Container System**: Implements bordered container layouts (`st.container(border=True)`) across all major pages for consistent visual hierarchy
+- **Enhanced KPI Card Design**: Features gradient-styled KPI cards with bordered containers for dashboard summaries and metrics display
+- **Advanced Filter Systems**: Includes Course filter in Race Log page and BMI Commentary panel in Body Metrics page
+- **Improved Table Interactions**: Enhanced table styling with bordered containers and popup dialogs for screenshot previews
+- **Container-Based Layout**: Migrated from basic containers to bordered container layouts for better visual separation and organization
+- **Dark Theme Integration**: Seamless integration of modern UI components with existing dark theme styling
+- **Responsive Container Design**: Adaptive container layouts that work across different screen sizes and resolutions
 
 Key implementation patterns:
 - Streamlit page routing using session state to control visibility
-- Custom CSS styling for dark theme with hover effects and gradients
+- Custom CSS styling for dark theme with enhanced container styling
+- Bordered container layouts for visual separation and organization
+- Gradient-styled KPI cards with consistent design language
 - Spinner usage for async operations (OCR extraction, research search)
-- Responsive layout using Streamlit columns and tabs with enhanced styling
+- Responsive layout using Streamlit columns and bordered containers
 - Error handling with user-friendly feedback messages
 - Inter-page data sharing via session state variables
-- **Interactive table selection with automatic screenshot preview and popup dialogs**
 
 **Section sources**
 - [app.py:76-150](file://app.py#L76-L150)
 - [app.py:152-176](file://app.py#L152-L176)
 - [app.py:179-205](file://app.py#L179-L205)
-- [app.py:208-1363](file://app.py#L208-L1363)
+- [app.py:208-1468](file://app.py#L208-L1468)
 
 ## Architecture Overview
 The application employs a layered architecture with clear separation of concerns and modern UI styling:
@@ -123,10 +126,10 @@ The application employs a layered architecture with clear separation of concerns
 ```mermaid
 graph TB
 subgraph "Presentation Layer"
-UI["Streamlit UI<br/>Pages: Performance, Data Import,<br/>Race Log, Benchmarks, Insights,<br/>AI Coach<br/>Dark Theme Styling"]
+UI["Streamlit UI<br/>Pages: Performance, Data Import,<br/>Race Log, Benchmarks, Insights,<br/>AI Coach<br/>Modernized Container System"]
 end
 subgraph "Controller Layer"
-CTRL["App Controller<br/>Session State<br/>Page Routing<br/>Dark Theme CSS"]
+CTRL["App Controller<br/>Session State<br/>Page Routing<br/>Container-Based UI"]
 end
 subgraph "Domain Services"
 OCR["OCR Service<br/>Alibaba Cloud API"]
@@ -134,7 +137,7 @@ QA["QA Service<br/>Alibaba Cloud API"]
 ANA["Analytics Engine<br/>Performance Charts<br/>Enhanced PB Management"]
 RES["Research Service<br/>Benchmark Search"]
 INS["Insight Generator<br/>Trend Analysis"]
-end
+END
 subgraph "Data Layer"
 STORE["DataStore<br/>JSON Persistence"]
 IDX["ScreenshotIndex<br/>Metadata Index"]
@@ -161,7 +164,7 @@ IDX --> STORE
 ```
 
 **Diagram sources**
-- [app.py:1-1363](file://app.py#L1-L1363)
+- [app.py:1-1468](file://app.py#L1-L1468)
 - [src/ocr_service.py:12-21](file://src/ocr_service.py#L12-L21)
 - [src/qa_service.py:12-22](file://src/qa_service.py#L12-L22)
 - [src/analytics.py:13-14](file://src/analytics.py#L13-L14)
@@ -185,8 +188,8 @@ DarkTheme --> HoverEffects["Sidebar Button Hover Effects<br/>Blue Accent with Tr
 HoverEffects --> DataFrameStyles["Enhanced DataFrame Styling<br/>Dark Headers, Hover Effects"]
 DataFrameStyles --> ButtonStyles["Custom Button Styling<br/>Gradient Backgrounds<br/>Focus States"]
 ButtonStyles --> InputStyles["Input Field Styling<br/>Blue Focus Borders<br/>Box Shadows"]
-InputStyles --> ChartStyles["Chart Container Styling<br/>Border Radius<br/>Padding"]
-ChartStyles --> End([Dark Theme Ready])
+InputStyles --> ContainerStyles["Container Styling<br/>Bordered Containers<br/>Rounded Corners"]
+ContainerStyles --> End([Modern UI Ready])
 ```
 
 **Diagram sources**
@@ -198,7 +201,8 @@ Key dark theme features:
 - **Button Styling**: Gradient backgrounds (#18181B to #27272A), rounded corners (8px), and focus states
 - **DataFrame Enhancement**: Dark headers with uppercase styling, hover effects, and improved borders
 - **Input Fields**: Blue focus borders with box shadows and enhanced visual feedback
-- **Chart Containers**: Rounded borders with subtle padding for better visual presentation
+- **Container Styling**: Bordered containers with rounded corners (12px) and subtle padding (12px)
+- **KPI Card Design**: Gradient backgrounds with left-side accent borders and shadow effects
 
 **Section sources**
 - [app.py:76-150](file://app.py#L76-L150)
@@ -221,7 +225,7 @@ AnalysisSection->>Controller : switch_page(page_name)
 ToolsSection->>Controller : switch_page(page_name)
 Controller->>Controller : Update st.session_state.page
 Controller->>Streamlit : st.rerun()
-Streamlit-->>User : Re-render Active Page with Dark Theme
+Streamlit-->>User : Re-render Active Page with Modern UI
 ```
 
 **Diagram sources**
@@ -242,8 +246,71 @@ Navigation structure with Analysis and Tools sections:
 **Section sources**
 - [app.py:179-205](file://app.py#L179-L205)
 
+### Modernized Page Layouts
+The application implements modern container-based layouts with enhanced visual components:
+
+```mermaid
+flowchart TD
+ModernLayout([Modern Layout System]) --> BorderContainers["Bordered Container System<br/>st.container(border=True)"]
+BorderContainers --> KPICards["KPI Card Design<br/>Gradient Backgrounds<br/>Left Accent Borders"]
+BorderContainers --> FilterSystems["Advanced Filter Systems<br/>Course Filter<br/>BMI Commentary"]
+KPICards --> Dashboard["Dashboard Layout<br/>4-Column KPI Grid"]
+FilterSystems --> RaceLog["Enhanced Race Log<br/>Course Filter + Filters"]
+FilterSystems --> BodyMetrics["Body Metrics<br/>BMI Commentary Panel"]
+Dashboard --> Performance["Performance Analytics<br/>PB Tables + Charts"]
+Performance --> ContainerLayout["Container-Based Layout<br/>Consistent Visual Hierarchy"]
+```
+
+**Diagram sources**
+- [app.py:688-740](file://app.py#L688-L740)
+- [app.py:811-851](file://app.py#L811-L851)
+- [app.py:861-877](file://app.py#L861-L877)
+- [app.py:1411-1419](file://app.py#L1411-L1419)
+
+Key modernization features:
+- **Bordered Container System**: Consistent use of `st.container(border=True)` across all major pages
+- **KPI Card Design**: Gradient-styled cards with bordered containers for dashboard metrics
+- **Advanced Filter Systems**: Course filter in Race Log and BMI commentary panel in Body Metrics
+- **Enhanced Table Interactions**: Bordered containers with improved popup dialogs
+- **Container-Based Layout**: Organized sections with visual separation and consistent styling
+
+**Section sources**
+- [app.py:688-740](file://app.py#L688-L740)
+- [app.py:811-851](file://app.py#L811-L851)
+- [app.py:861-877](file://app.py#L861-L877)
+- [app.py:1411-1419](file://app.py#L1411-L1419)
+
+### Container-Based UI Components
+The application extensively uses bordered container layouts for consistent visual organization:
+
+```mermaid
+sequenceDiagram
+participant Page as "Page Component"
+participant Container as "Bordered Container"
+participant Content as "UI Content"
+participant Styling as "Container Styling"
+Page->>Container : Create Container with border=True
+Container->>Styling : Apply CSS Styling
+Styling->>Container : Background : #18181B<br/>Border : #3F3F46<br/>Radius : 12px<br/>Padding : 12px
+Container->>Content : Render Content Inside
+Content-->>Page : Display with Modern Styling
+```
+
+**Diagram sources**
+- [app.py:144-149](file://app.py#L144-L149)
+
+Container styling specifications:
+- **Background**: `#18181B` (dark gray background)
+- **Border**: `#3F3F46` (medium gray border)
+- **Border Radius**: `12px` (rounded corners)
+- **Padding**: `12px` (internal spacing)
+- **Accent Color**: `#06B6D4` (blue accent for KPI cards)
+
+**Section sources**
+- [app.py:144-149](file://app.py#L144-L149)
+
 ### Session State Management
-The controller initializes essential session state variables with dark theme awareness:
+The controller initializes essential session state variables with modern UI awareness:
 
 ```mermaid
 flowchart TD
@@ -253,8 +320,8 @@ InitChat --> InitLast["Initialize 'last_extraction' = None"]
 InitLast --> InitQA["Initialize 'qa_service' = QAService()"]
 InitQA --> SyncHistory["Sync Conversation History"]
 SyncHistory --> InitStats["Initialize Upload Statistics"]
-InitStats --> DarkThemeReady["Dark Theme Ready"]
-DarkThemeReady --> End([Session Ready])
+InitStats --> ModernUIReady["Modern UI Ready<br/>Container System Active"]
+ModernUIReady --> End([Session Ready])
 ```
 
 **Diagram sources**
@@ -272,10 +339,10 @@ Key session state variables:
 - [app.py:152-171](file://app.py#L152-L171)
 
 ### Page Routing and Content
-The application routes to six main pages with enhanced content and styling:
+The application routes to six main pages with modernized content and styling:
 
 #### Data Import Page
-Handles screenshot ingestion, OCR extraction, and data validation with improved UI:
+Handles screenshot ingestion, OCR extraction, and data validation with enhanced UI:
 
 ```mermaid
 sequenceDiagram
@@ -296,59 +363,58 @@ ImportPage->>VA : validate_swim_event_data()
 VA-->>ImportPage : Validation Result + Errors
 ImportPage->>DS : add_swim_event()
 DS-->>ImportPage : Confirmation
-ImportPage-->>User : Success/Error Messages with Dark Theme
+ImportPage-->>User : Success/Error Messages with Modern UI
 ```
 
 **Diagram sources**
-- [app.py:208-638](file://app.py#L208-L638)
+- [app.py:208-656](file://app.py#L208-L656)
 - [src/screenshot_manager.py:27-82](file://src/screenshot_manager.py#L27-L82)
 - [src/ocr_service.py:49-119](file://src/ocr_service.py#L49-L119)
 - [src/validation.py:75-103](file://src/validation.py#L75-L103)
 - [src/storage.py:40-44](file://src/storage.py#L40-L44)
 
 #### Race Log Page
-Provides comprehensive swim records management with enhanced table interactions:
+Provides comprehensive swim records management with enhanced table interactions and Course filter:
 
 ```mermaid
 flowchart TD
 LoadEvents([Load Swim Events]) --> CheckEvents{"Events Available?"}
 CheckEvents --> |No| ShowInfo["Show Info Message"]
 CheckEvents --> |Yes| CreateDF["Create DataFrame with<br/>Age Calculation"]
-CreateDF --> Filters["Apply Stroke/Distance/Meet Filters"]
-Filters --> DisplayTable["Display Enhanced Table<br/>with Dark Theme Styling"]
+CreateDF --> Filters["Apply Stroke/Distance/Meet/Course Filters"]
+Filters --> DisplayTable["Display Enhanced Table<br/>with Bordered Container"]
 DisplayTable --> RowSelection["Enable Single-Row Selection"]
 RowSelection --> ScreenshotPreview["Show Source Screenshot<br/>with Popup Dialog"]
-ScreenshotPreview --> DownloadCSV["Download CSV with<br/>Dark Theme Buttons"]
+ScreenshotPreview --> DownloadCSV["Download CSV with<br/>Modern Styling"]
 ```
 
 **Diagram sources**
-- [app.py:640-740](file://app.py#L640-L740)
+- [app.py:658-764](file://app.py#L658-L764)
 
 #### Performance Analytics Page
-Features comprehensive performance visualization with enhanced Personal Bests interaction:
+Features comprehensive performance visualization with enhanced Personal Bests interaction and KPI cards:
 
 ```mermaid
 flowchart TD
 LoadEvents([Load Swim Events]) --> CheckEvents{"Events Available?"}
 CheckEvents --> |No| ShowInfo["Show Info Message"]
-CheckEvents --> |Yes| Summary["Generate Dashboard Summary<br/>with Gradient Cards"]
-Summary --> Progression["Create Time Progression Charts<br/>with National Standards"]
-Progression --> PBTables["Create LC/SC/Other PB Tables<br/>with Popup Dialogs"]
-PBTables --> RowSelection["Enable Single-Row Selection<br/>with Dark Theme Styling"]
+CheckEvents --> |Yes| Summary["Generate Dashboard Summary<br/>with Gradient KPI Cards"]
+Summary --> PBTables["Create LC/SC/Other PB Tables<br/>with Bordered Containers"]
+PBTables --> RowSelection["Enable Single-Row Selection<br/>with Popup Dialogs"]
 RowSelection --> ScreenshotPreview["Automatic Screenshot Preview<br/>in Popup Dialog"]
 ScreenshotPreview --> Insights["Generate Performance Insights"]
 Insights --> Report["Download HTML Report<br/>with Enhanced Styling"]
 ```
 
 **Diagram sources**
-- [app.py:789-1148](file://app.py#L789-L1148)
+- [app.py:854-1240](file://app.py#L854-L1240)
 - [src/analytics.py:36-65](file://src/analytics.py#L36-L65)
 - [src/analytics.py:43-60](file://src/analytics.py#L43-L60)
 - [src/analytics.py:91-112](file://src/analytics.py#L91-L112)
 - [src/analytics.py:115-138](file://src/analytics.py#L115-L138)
 
 #### Benchmarks Page
-Displays Chinese National Swimming Standards with OCR import capability:
+Displays Chinese National Swimming Standards with OCR import capability and bordered container styling:
 
 ```mermaid
 sequenceDiagram
@@ -357,33 +423,33 @@ participant Benchmarks as "Benchmarks Page"
 participant OCR as "OCRService"
 participant DDG as "DuckDuckGo Search"
 User->>Benchmarks : Select Long/Short Course Tabs
-Benchmarks-->>User : Display Standards Tables
+Benchmarks-->>User : Display Standards Tables with Containers
 User->>Benchmarks : Upload Standards Screenshot
 Benchmarks->>OCR : Extract Standards via OCR
 OCR->>OCR : Process Image + Extract JSON
 OCR-->>Benchmarks : Return Extracted Standards
-Benchmarks-->>User : Display Extracted Results
+Benchmarks-->>User : Display Extracted Results in Containers
 ```
 
 **Diagram sources**
-- [app.py:1151-1250](file://app.py#L1151-L1250)
+- [app.py:1242-1343](file://app.py#L1242-L1343)
 
 #### Insights Page
-Generates trend analysis and training recommendations with enhanced presentation:
+Generates trend analysis and training recommendations with enhanced presentation and KPI cards:
 
 ```mermaid
 flowchart TD
 LoadData([Load Swim Events]) --> CheckData{"Data Available?"}
 CheckData --> |No| ShowInfo["Show Info Message"]
-CheckData --> |Yes| TrendInsights["Generate Trend Insights<br/>with Enhanced Tables"]
-TrendInsights --> Strengths["Identify Strengths/Weaknesses<br/>with Gradient Cards"]
-Strengths --> Assessment["Assess Potential<br/>with Structured Metrics"]
+CheckData --> |Yes| TrendInsights["Generate Trend Insights<br/>with Bordered Containers"]
+TrendInsights --> Strengths["Identify Strengths/Weaknesses<br/>with KPI Cards"]
+Strengths --> Assessment["Assess Potential<br/>with Gradient KPI Cards"]
 Assessment --> Suggestions["Generate Training Suggestions<br/>with Priority Indicators"]
-Suggestions --> Render["Render All Insights<br/>with Dark Theme Styling"]
+Suggestions --> Render["Render All Insights<br/>with Modern Container Styling"]
 ```
 
 **Diagram sources**
-- [app.py:1252-1327](file://app.py#L1252-L1327)
+- [app.py:1345-1432](file://app.py#L1345-L1432)
 - [src/insights.py:14-63](file://src/insights.py#L14-L63)
 - [src/insights.py:66-87](file://src/insights.py#L66-L87)
 - [src/insights.py:90-111](file://src/insights.py#L90-L111)
@@ -401,7 +467,7 @@ participant DS as "DataStore"
 participant PA as "PerformanceAnalytics"
 participant API as "Alibaba Cloud API"
 User->>Chat : Enter Question
-Chat->>Chat : Append to chat_history<br/>with Dark Theme Styling
+Chat->>Chat : Append to chat_history<br/>with Modern Styling
 Chat->>QA : answer(question)
 QA->>DS : Load Swim Events/Metrics
 QA->>PA : Get Personal Bests
@@ -412,19 +478,19 @@ Chat-->>User : Display Conversation<br/>with Enhanced Styling
 ```
 
 **Diagram sources**
-- [app.py:1329-1360](file://app.py#L1329-L1360)
+- [app.py:1434-1466](file://app.py#L1434-L1466)
 - [src/qa_service.py:76-134](file://src/qa_service.py#L76-L134)
 - [src/qa_service.py:23-57](file://src/qa_service.py#L23-L57)
 
 **Section sources**
-- [app.py:208-1363](file://app.py#L208-L1363)
+- [app.py:208-1468](file://app.py#L208-L1468)
 
 ## Dependency Analysis
 The application exhibits clear dependency relationships between modules with enhanced styling integration:
 
 ```mermaid
 graph TB
-APP["app.py<br/>Dark Theme Controller"] --> CFG["src/config.py"]
+APP["app.py<br/>Modern UI Controller"] --> CFG["src/config.py"]
 APP --> MOD["src/models.py"]
 APP --> ST["src/storage.py"]
 APP --> SM["src/screenshot_manager.py"]
@@ -458,7 +524,7 @@ Key dependency patterns:
 - Clear separation of concerns (UI orchestration vs. business logic)
 - External service integration via configuration-driven approach
 - Circular dependencies avoided through service composition
-- **Enhanced styling integration** through custom CSS in main controller
+- **Enhanced styling integration** through custom CSS and bordered container system
 
 **Section sources**
 - [app.py:10-19](file://app.py#L10-L19)
@@ -470,29 +536,31 @@ The application implements several performance optimization strategies with enha
 
 - **Asynchronous Operations**: Uses Streamlit spinners during OCR extraction and research searches to maintain UI responsiveness
 - **Data Caching**: Research results cached to reduce API calls and improve response times
-- **Efficient Data Loading**: Lazy loading of dataframes and selective rendering of charts with dark theme optimizations
+- **Efficient Data Loading**: Lazy loading of dataframes and selective rendering of charts with modern container styling
 - **Memory Management**: Session state cleanup and persistent service instances minimize memory overhead
 - **Responsive Layout**: Adaptive column widths and container-based rendering for optimal screen utilization
 - **Optimized Table Rendering**: Single-row selection mode reduces unnecessary re-renders and improves table interaction performance
 - **Dark Theme Performance**: Custom CSS applied once at startup, minimizing runtime styling overhead
+- **Container System Optimization**: Bordered container layouts designed for efficient rendering and minimal overhead
 - **Enhanced Visual Feedback**: Smooth transitions and hover effects optimized for modern browsers
 
 Best practices implemented:
 - Spinner usage for long-running operations
 - Conditional rendering based on data availability
-- Efficient chart generation with Plotly and enhanced styling
+- Efficient chart generation with Plotly and modern container styling
 - Minimal re-renders through targeted state updates
 - **Smart screenshot path resolution** to minimize file system operations
 - **Custom CSS optimization** for reduced styling overhead
+- **Container-based layout optimization** for consistent performance across different screen sizes
 
 ## Troubleshooting Guide
-Common issues and solutions with dark theme considerations:
+Common issues and solutions with modern UI considerations:
 
-**Dark Theme Issues:**
-- Verify custom CSS is properly loaded in st.markdown() block
-- Check browser compatibility with CSS variables and gradients
-- Ensure dark theme colors are accessible and readable
-- Verify sidebar hover effects work across different screen sizes
+**Modern UI Issues:**
+- Verify bordered container styling is properly applied with `st.container(border=True)`
+- Check container radius and padding settings for consistent visual appearance
+- Ensure gradient KPI cards render correctly across different browsers
+- Verify container styling compatibility with Streamlit version
 
 **Navigation Problems:**
 - Confirm Analysis and Tools section buttons are properly configured
@@ -529,12 +597,24 @@ Common issues and solutions with dark theme considerations:
 - Verify selection_mode="single-row" and on_select="rerun" parameters are correctly configured
 - Check that screenshot paths are properly stored in source_screenshot field
 - Ensure three path resolution strategies have appropriate fallback order
-- Verify popup dialog functionality works with dark theme styling
+- Verify popup dialog functionality works with modern container styling
 
 **Screenshot Preview Problems:**
 - Verify screenshot files exist at the resolved path locations
 - Check file permissions for screenshot directory access
 - Ensure SCREENSHOTS_DIR configuration points to correct location
+
+**Container System Issues:**
+- Verify bordered container syntax: `st.container(border=True)`
+- Check container styling CSS is properly loaded
+- Ensure container radius and padding settings are consistent
+- Verify container styling compatibility with Streamlit version
+
+**KPI Card Display Problems:**
+- Check gradient background CSS syntax
+- Verify left accent border styling
+- Ensure container padding is sufficient for card content
+- Check color contrast for accessibility compliance
 
 **Section sources**
 - [app.py:183-236](file://app.py#L183-L236)
@@ -543,12 +623,12 @@ Common issues and solutions with dark theme considerations:
 - [src/research_service.py:52-53](file://src/research_service.py#L52-L53)
 
 ## Conclusion
-The Swimming Data Analysis Platform demonstrates robust Streamlit application architecture with comprehensive dark theme implementation and modern UI enhancements. The main application controller effectively orchestrates six distinct functional areas organized into Analysis and Tools sections while maintaining responsive user experience through strategic use of session state, spinners, and modular service design.
+The Swimming Data Analysis Platform demonstrates robust Streamlit application architecture with comprehensive modern UI enhancements and container-based design patterns. The main application controller effectively orchestrates six distinct functional areas organized into Analysis and Tools sections while maintaining responsive user experience through strategic use of session state, spinners, and modular service design.
 
-**Updated** The recent enhancements significantly modernize the user interface with comprehensive dark theme implementation, custom CSS styling, and enhanced navigation structure. The migration from seven pages to six pages with updated naming conventions (Performance, Data Import, Race Log, Benchmarks, Insights, AI Coach) provides a cleaner user experience with improved visual hierarchy and modern styling.
+**Updated** The recent enhancements significantly modernize the user interface with comprehensive bordered container layouts, gradient-styled KPI cards, and improved visual styling across multiple pages. The addition of Course filter to Race Log page and BMI Commentary panel to Body Metrics page provides enhanced functionality and specialized analysis capabilities. The migration from basic containers to bordered container layouts creates a consistent visual hierarchy that improves user experience and data organization.
 
-The platform successfully bridges local data persistence with cloud-based AI services, providing a scalable foundation for swimming performance analysis and insights generation. The enhanced interactive features, including popup dialogs for screenshot previews, gradient-styled cards, and hover effects, make it easier for users to explore their swimming records and understand their performance progression through visual components.
+The platform successfully bridges local data persistence with cloud-based AI services, providing a scalable foundation for swimming performance analysis and insights generation. The container-based UI system ensures consistent visual presentation across different screen sizes and resolutions, while the modern styling enhances readability and user engagement.
 
-The dark theme implementation provides improved visual comfort for extended use, with carefully chosen color schemes that maintain accessibility while enhancing the professional appearance of the application. The structured navigation with Analysis and Tools sections creates a logical workflow for users, from data ingestion to performance analysis and AI-powered insights.
+The dark theme implementation combined with bordered containers and gradient KPI cards creates a professional, data-driven interface that supports both casual users and serious swimmers seeking detailed performance analysis. The structured navigation with Analysis and Tools sections, enhanced with modern container styling, provides a logical workflow for users from data ingestion to performance analysis and AI-powered insights.
 
-Future enhancements could include advanced caching strategies for screenshot files, enhanced error recovery mechanisms for path resolution, expanded visualization capabilities for performance trends and comparisons, and additional customization options for the dark theme styling.
+Future enhancements could include advanced container animation effects, expanded visualization capabilities for performance trends and comparisons, additional customization options for the container styling system, and enhanced accessibility features for container-based UI components.

@@ -14,11 +14,11 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced chart visualization capabilities with container styling using `.chart-card` CSS class
-- Improved benchmark subtitle formatting with cyan color styling (`#06B6D4`)
-- Added new Gap to NM column functionality for performance gap calculations against national master standards
-- Integrated comprehensive gap analysis in personal best tables for LC and SC course records
-- Enhanced benchmark visualization system with real-time gap calculations and nearest target identification
+- Enhanced chart visualization capabilities with container styling using `.chart-card` CSS class for modern, responsive design
+- Improved visual hierarchy and consistent presentation across all benchmark visualization charts
+- Enhanced HTML report generation with container-based layout and improved styling
+- Added enhanced subtitle formatting with cyan color styling (`#06B6D4`) for benchmark information
+- Integrated comprehensive gap analysis functionality with real-time calculations and nearest target identification
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -43,10 +43,10 @@ The analytics engine is implemented as part of a Streamlit application that inge
 ```mermaid
 graph TB
 subgraph "Application Layer"
-APP["app.py<br/>Streamlit UI<br/>Enhanced Benchmark Visualization<br/>Gap Analysis"]
+APP["app.py<br/>Streamlit UI<br/>Enhanced Benchmark Visualization<br/>Gap Analysis<br/>Container Styling"]
 END
 subgraph "Enhanced Analytics Layer"
-PA["analytics.py<br/>PerformanceAnalytics<br/>Enhanced Analytics"]
+PA["analytics.py<br/>PerformanceAnalytics<br/>Enhanced Analytics<br/>.chart-card Styling"]
 IG["insights.py<br/>InsightGenerator<br/>Trend Analysis"]
 END
 subgraph "Data Layer"
@@ -84,7 +84,7 @@ APP --> SC
 - [README.md:1-66](file://README.md#L1-L66)
 
 ## Core Components
-- **PerformanceAnalytics**: Enhanced central analytics class providing time progression analysis, stroke comparison, personal bests, time development tracking, HTML report generation, comprehensive dashboard summaries, and gap analysis functionality.
+- **PerformanceAnalytics**: Enhanced central analytics class providing time progression analysis, stroke comparison, personal bests, time development tracking, HTML report generation, comprehensive dashboard summaries, gap analysis functionality, and modern container styling with `.chart-card` class.
 - **InsightGenerator**: Advanced trend analysis generator that identifies performance improvements, weaknesses, and provides training recommendations.
 - **DataStore and ScreenshotIndex**: Local JSON-based persistence for swim events, body metrics, and screenshot metadata with robust error handling.
 - **Validation utilities**: Comprehensive time format validation, conversions, and required-field checks with detailed error reporting.
@@ -100,7 +100,7 @@ APP --> SC
 - [app.py:18-58](file://app.py#L18-L58)
 
 ## Architecture Overview
-The enhanced analytics pipeline begins with screenshot ingestion and OCR extraction, followed by comprehensive validation and persistence. The analytics engine now provides advanced time development analysis, generates interactive HTML reports with Plotly charts, delivers comprehensive insights through trend analysis and performance tracking, integrates Chinese National Swimming Standards for benchmark visualization and gap analysis, and includes enhanced container styling for better presentation.
+The enhanced analytics pipeline begins with screenshot ingestion and OCR extraction, followed by comprehensive validation and persistence. The analytics engine now provides advanced time development analysis, generates interactive HTML reports with Plotly charts, delivers comprehensive insights through trend analysis and performance tracking, integrates Chinese National Swimming Standards for benchmark visualization and gap analysis, and includes enhanced container styling for better presentation with `.chart-card` class for consistent chart styling.
 
 ```mermaid
 sequenceDiagram
@@ -117,17 +117,17 @@ UI->>Store : Persist validated events
 UI->>PA : Request time development analysis
 PA->>Store : Load swim events
 PA->>PA : Analyze time progression trends
-PA->>UI : Time development insights
+PA->>UI : Time development insights with .chart-card styling
 UI->>IG : Request trend insights
 IG->>Store : Load swim events
 IG->>IG : Compute improvement patterns
 IG->>UI : Advanced insights list
 UI->>LC : Load LC standards
 UI->>SC : Load SC standards
-UI->>UI : Generate benchmark charts with enhanced subtitles
-UI->>PA : Generate HTML report with container styling
+UI->>UI : Generate benchmark charts with enhanced subtitles and container styling
+UI->>PA : Generate HTML report with .chart-card container styling
 PA->>Store : Load swim events
-PA->>PA : Create interactive charts with .chart-card styling
+PA->>PA : Create interactive charts with .chart-card CSS class
 PA->>UI : Complete HTML report with enhanced presentation
 ```
 
