@@ -58,7 +58,8 @@ class PerformanceAnalytics:
                     "time": e.time,
                     "time_seconds": time_sec,
                     "date": e.date,
-                    "meet_name": e.meet_name
+                    "meet_name": e.meet_name,
+                    "source_screenshot": e.source_screenshot,
                 }
         
         return pd.DataFrame(list(pb_dict.values()))

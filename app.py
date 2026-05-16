@@ -593,7 +593,8 @@ elif st.session_state.page == "Records":
                 "Rank": e.rank if e.rank else "-",
                 "Course": e.course if e.course else "-",
                 "Round": e.round if e.round else "-",
-                "Splits": ", ".join(e.splits) if e.splits else "-"
+                "Splits": ", ".join(e.splits) if e.splits else "-",
+                "_source_screenshot": e.source_screenshot or ""
             })
         
         df = pd.DataFrame(records)
@@ -619,11 +620,54 @@ elif st.session_state.page == "Records":
         # Stats
         st.caption(f"Showing {len(filtered_df)} of {len(df)} events across {df['Meet'].nunique()} meets")
         
-        # Table
-        st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+        # Reset index for consistent positional indexing after filtering
+        filtered_df = filtered_df.reset_index(drop=True)
         
-        # Download
-        csv = filtered_df.to_csv(index=False)
+        # Prepare display df (exclude internal _source_screenshot column)
+        display_df = filtered_df.drop(columns=["_source_screenshot"])
+        
+        # Keep source_screenshot paths aligned with display rows
+        screenshot_paths = filtered_df["_source_screenshot"].tolist()
+        
+        # Display table with clickable row selection
+        st.caption("Click a row to view its source screenshot")
+        selection = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            selection_mode="single-row",
+            on_select="rerun",
+            key="records_table",
+        )
+        
+        # Show screenshot for selected row
+        selected_rows = selection.selection.rows if selection and selection.selection else []
+        if selected_rows:
+            row_idx = selected_rows[0]
+            source_screenshot = screenshot_paths[row_idx]
+            
+            if source_screenshot:
+                st.markdown("---")
+                st.subheader("📷 Source Screenshot")
+                
+                # Try as absolute path first (most records store absolute paths)
+                img_path = Path(source_screenshot)
+                if not img_path.exists():
+                    # Try relative to screenshots directory
+                    img_path = SCREENSHOTS_DIR / source_screenshot
+                if not img_path.exists():
+                    # Try relative to project root
+                    img_path = Path(__file__).parent / source_screenshot
+                if img_path.exists():
+                    st.image(str(img_path), caption=f"Source: {img_path.name}")
+                else:
+                    st.warning(f"Screenshot file not found: {source_screenshot}")
+            else:
+                st.info("No source screenshot available for this record.")
+        
+        # Download CSV
+        csv_df = filtered_df.drop(columns=["_source_screenshot"])
+        csv = csv_df.to_csv(index=False)
         st.download_button("Download CSV", csv, "swim_records.csv", "text/csv")
 
 
@@ -706,38 +750,84 @@ elif st.session_state.page == "Analytics":
             except ValueError:
                 return len(PB_ORDER)
         
+        @st.dialog("Source Screenshot", width="large")
+        def _show_pb_screenshot(image_path, event_label):
+            """Display the source screenshot for a PB record in a popup dialog."""
+            img_path = Path(image_path)
+            if not img_path.exists():
+                img_path = SCREENSHOTS_DIR / image_path
+            if not img_path.exists():
+                img_path = Path(__file__).parent / image_path
+            if img_path.exists():
+                st.image(str(img_path), caption=f"{event_label} — {img_path.name}")
+            else:
+                st.warning(f"Screenshot file not found: {image_path}")
+
         pb_df = PerformanceAnalytics.get_personal_bests()
         if not pb_df.empty:
             pb_df["_sort"] = pb_df.apply(_pb_sort_key, axis=1)
-            pb_df = pb_df.sort_values("_sort").drop(columns=["_sort"])
+            pb_df = pb_df.sort_values("_sort").drop(columns=["_sort"]).reset_index(drop=True)
             pb_df["Event"] = pb_df["distance"].astype(str) + "m " + pb_df["stroke"].str.title()
             display_cols = ["Event", "time", "date", "meet_name"]
             display_rename = {"time": "Time", "date": "Date", "meet_name": "Meet"}
-        
-            lc_df = pb_df[pb_df["course"] == "LC"]
-            sc_df = pb_df[pb_df["course"] == "SC"]
-            other_df = pb_df[~pb_df["course"].isin(["LC", "SC"])]
-        
+
+            lc_df = pb_df[pb_df["course"] == "LC"].reset_index(drop=True)
+            sc_df = pb_df[pb_df["course"] == "SC"].reset_index(drop=True)
+            other_df = pb_df[~pb_df["course"].isin(["LC", "SC"])].reset_index(drop=True)
+
             if not lc_df.empty:
                 st.subheader("PB - LC")
-                st.dataframe(
+                st.caption("Click a row to view its source screenshot")
+                lc_selection = st.dataframe(
                     lc_df[display_cols].rename(columns=display_rename),
                     use_container_width=True, hide_index=True,
+                    selection_mode="single-row", on_select="rerun",
+                    key="pb_lc_table",
                 )
-        
+                lc_selected = lc_selection.selection.rows if lc_selection and lc_selection.selection else []
+                if lc_selected:
+                    idx = lc_selected[0]
+                    src = lc_df.iloc[idx].get("source_screenshot", "")
+                    if src:
+                        _show_pb_screenshot(src, lc_df.iloc[idx]["Event"])
+                    else:
+                        st.info("No source screenshot available for this PB record.")
+
             if not sc_df.empty:
                 st.subheader("PB - SC")
-                st.dataframe(
+                st.caption("Click a row to view its source screenshot")
+                sc_selection = st.dataframe(
                     sc_df[display_cols].rename(columns=display_rename),
                     use_container_width=True, hide_index=True,
+                    selection_mode="single-row", on_select="rerun",
+                    key="pb_sc_table",
                 )
-        
+                sc_selected = sc_selection.selection.rows if sc_selection and sc_selection.selection else []
+                if sc_selected:
+                    idx = sc_selected[0]
+                    src = sc_df.iloc[idx].get("source_screenshot", "")
+                    if src:
+                        _show_pb_screenshot(src, sc_df.iloc[idx]["Event"])
+                    else:
+                        st.info("No source screenshot available for this PB record.")
+
             if not other_df.empty:
                 st.subheader("Personal Bests")
-                st.dataframe(
+                st.caption("Click a row to view its source screenshot")
+                other_selection = st.dataframe(
                     other_df[display_cols].rename(columns=display_rename),
                     use_container_width=True, hide_index=True,
+                    selection_mode="single-row", on_select="rerun",
+                    key="pb_other_table",
                 )
+                other_selected = other_selection.selection.rows if other_selection and other_selection.selection else []
+                if other_selected:
+                    idx = other_selected[0]
+                    src = other_df.iloc[idx].get("source_screenshot", "")
+                    if src:
+                        _show_pb_screenshot(src, other_df.iloc[idx]["Event"])
+                    else:
+                        st.info("No source screenshot available for this PB record.")
         else:
             st.info("No personal bests recorded yet.")
         

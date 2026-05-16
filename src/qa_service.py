@@ -158,10 +158,6 @@ Data Context:
             answer = response.choices[0].message.content
             logger.info("Received API response for question: %s", question[:80])
             
-            # Store in conversation history
-            self.conversation_history.append({"role": "user", "content": question})
-            self.conversation_history.append({"role": "assistant", "content": answer})
-            
             return answer
             
         except Exception as e:
