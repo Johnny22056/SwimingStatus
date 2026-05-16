@@ -51,6 +51,7 @@ TIME_FORMAT_SS = r"^\d{1,2}\.\d{2}$"
 MEET_COURSE_OVERRIDES: dict[str, str] = {
     "CWSC+Millfield 2024 Int'l Open (Heats)": "SC",
     "CWSC+Millfield 2024 Int'l Open (Finals)": "SC",
+    "CWSC+Millfield 2023 Int'l Open": "SC",
 }
 
 

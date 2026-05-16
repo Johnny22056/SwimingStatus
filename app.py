@@ -214,10 +214,18 @@ if st.session_state.page == "Data Import":
     
     # Quick Stats at the top
     uc1, uc2, uc3, uc4 = st.columns(4)
-    uc1.metric("Uploaded", st.session_state.upload_new_count)
-    uc2.metric("Success", st.session_state.upload_success_count)
-    uc3.metric("Failed", st.session_state.upload_failed_count)
-    uc4.metric("Duplicates", st.session_state.upload_duplicate_count)
+    for _col, _label, _value in [
+        (uc1, "Uploaded", st.session_state.upload_new_count),
+        (uc2, "Success", st.session_state.upload_success_count),
+        (uc3, "Failed", st.session_state.upload_failed_count),
+        (uc4, "Duplicates", st.session_state.upload_duplicate_count),
+    ]:
+        _col.markdown(f"""
+        <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
+            <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{_value}</div>
+        </div>
+        """, unsafe_allow_html=True)
     if st.button("Reset Stats", key="reset_upload_stats"):
         st.session_state.upload_success_count = 0
         st.session_state.upload_failed_count = 0
@@ -524,10 +532,18 @@ if st.session_state.page == "Data Import":
                     
                     # Summary
                     col1, col2, col3, col4 = st.columns(4)
-                    col1.metric("Succeeded", len(succeeded))
-                    col2.metric("Skipped (screenshot dupes)", len(skipped))
-                    col3.metric("Record Duplicates", len(record_duplicates))
-                    col4.metric("Failed", len(failed))
+                    for _col, _label, _value in [
+                        (col1, "Succeeded", len(succeeded)),
+                        (col2, "Skipped (dupes)", len(skipped)),
+                        (col3, "Record Duplicates", len(record_duplicates)),
+                        (col4, "Failed", len(failed)),
+                    ]:
+                        _col.markdown(f"""
+                        <div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase; margin-bottom: 6px;">{_label}</div>
+                            <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{_value}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
                     
                     # Show succeeded items
                     if succeeded:
@@ -670,13 +686,16 @@ elif st.session_state.page == "Race Log":
         df = pd.DataFrame(records)
         
         # Filters
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            stroke_filter = st.selectbox("Filter by Stroke", ["All"] + sorted(df["Stroke"].unique().tolist()))
-        with col2:
-            distance_filter = st.selectbox("Filter by Distance", ["All"] + sorted(df["Distance"].unique().tolist(), key=lambda x: int(x) if str(x).isdigit() else 0))
-        with col3:
-            meet_filter = st.selectbox("Filter by Meet", ["All"] + sorted(df["Meet"].unique().tolist()))
+        with st.container(border=True):
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                stroke_filter = st.selectbox("Filter by Stroke", ["All"] + sorted(df["Stroke"].unique().tolist()))
+            with col2:
+                distance_filter = st.selectbox("Filter by Distance", ["All"] + sorted(df["Distance"].unique().tolist(), key=lambda x: int(x) if str(x).isdigit() else 0))
+            with col3:
+                course_filter = st.selectbox("Filter by Course", ["All"] + sorted(df["Course"].dropna().unique().tolist()))
+            with col4:
+                meet_filter = st.selectbox("Filter by Meet", ["All"] + sorted(df["Meet"].unique().tolist()))
         
         # Apply filters
         filtered_df = df.copy()
@@ -684,6 +703,8 @@ elif st.session_state.page == "Race Log":
             filtered_df = filtered_df[filtered_df["Stroke"] == stroke_filter]
         if distance_filter != "All":
             filtered_df = filtered_df[filtered_df["Distance"] == distance_filter]
+        if course_filter != "All":
+            filtered_df = filtered_df[filtered_df["Course"] == course_filter]
         if meet_filter != "All":
             filtered_df = filtered_df[filtered_df["Meet"] == meet_filter]
         
@@ -700,15 +721,16 @@ elif st.session_state.page == "Race Log":
         screenshot_paths = filtered_df["_source_screenshot"].tolist()
         
         # Display table with clickable row selection
-        st.caption("Click a row to view its source screenshot")
-        selection = st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-            selection_mode="single-row",
-            on_select="rerun",
-            key="records_table",
-        )
+        with st.container(border=True):
+            st.caption("Click a row to view its source screenshot")
+            selection = st.dataframe(
+                display_df,
+                use_container_width=True,
+                hide_index=True,
+                selection_mode="single-row",
+                on_select="rerun",
+                key="records_table",
+            )
         
         # Show screenshot for selected row
         selected_rows = selection.selection.rows if selection and selection.selection else []
@@ -748,49 +770,90 @@ elif st.session_state.page == "Body Metrics":
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.subheader("Add New Measurement")
-        with st.form("body_metrics_form"):
-            metric_date = st.date_input("Date", value=datetime.now())
-            height = st.number_input("Height (cm)", min_value=0.0, max_value=250.0, step=0.1)
-            weight = st.number_input("Weight (kg)", min_value=0.0, max_value=150.0, step=0.1)
-            arm_span = st.number_input("Arm Span (cm)", min_value=0.0, max_value=250.0, step=0.1)
-            notes = st.text_area("Notes")
-            
-            submitted = st.form_submit_button("Save Measurement", type="primary")
-            if submitted:
-                metrics_valid, metrics_errors = validate_body_metrics(height, weight)
-                if not metrics_valid:
-                    for err in metrics_errors:
-                        st.error(err)
-                else:
-                    metric = BodyMetrics(
-                        date=metric_date.strftime("%Y-%m-%d"),
-                        height_cm=height,
-                        weight_kg=weight,
-                        arm_span_cm=arm_span,
-                        notes=notes
-                    )
-                    DataStore.add_body_metric(metric)
-                    st.success("Measurement saved!")
-                    st.rerun()
+        with st.container(border=True):
+            st.subheader("Add New Measurement")
+            with st.form("body_metrics_form"):
+                metric_date = st.date_input("Date", value=datetime.now())
+                height = st.number_input("Height (cm)", min_value=0.0, max_value=250.0, step=0.1)
+                weight = st.number_input("Weight (kg)", min_value=0.0, max_value=150.0, step=0.1)
+                arm_span = st.number_input("Arm Span (cm)", min_value=0.0, max_value=250.0, step=0.1)
+                notes = st.text_area("Notes")
+                
+                submitted = st.form_submit_button("Save Measurement", type="primary")
+                if submitted:
+                    metrics_valid, metrics_errors = validate_body_metrics(height, weight)
+                    if not metrics_valid:
+                        for err in metrics_errors:
+                            st.error(err)
+                    else:
+                        metric = BodyMetrics(
+                            date=metric_date.strftime("%Y-%m-%d"),
+                            height_cm=height,
+                            weight_kg=weight,
+                            arm_span_cm=arm_span,
+                            notes=notes
+                        )
+                        DataStore.add_body_metric(metric)
+                        st.success("Measurement saved!")
+                        st.rerun()
     
     with col2:
         metrics = DataStore.load_body_metrics()
         if not metrics:
             st.info("No body metrics recorded yet.")
         else:
-            st.subheader("History")
-            df = pd.DataFrame([m.to_dict() for m in metrics])
-            df["bmi"] = [m.bmi for m in metrics]
-            df["date"] = pd.to_datetime(df["date"])
-            st.dataframe(df.sort_values("date", ascending=False), use_container_width=True)
+            with st.container(border=True):
+                st.subheader("History")
+                df = pd.DataFrame([m.to_dict() for m in metrics])
+                df["bmi"] = [m.bmi for m in metrics]
+                df["date"] = pd.to_datetime(df["date"])
+                st.dataframe(df.sort_values("date", ascending=False), use_container_width=True)
             
-
+            # BMI Commentary section
+            df_sorted = df.sort_values("date", ascending=False)
+            latest = df_sorted.iloc[0]
+            bmi = latest.get("bmi")
+            if bmi and bmi > 0:
+                with st.container(border=True):
+                    st.subheader("BMI Commentary")
+                    if bmi < 18.5:
+                        category = "Underweight"
+                        color = "#F59E0B"
+                        comment = "Consider increasing caloric intake to support training demands."
+                    elif bmi < 25:
+                        category = "Normal / Healthy"
+                        color = "#10B981"
+                        comment = "Great range for a competitive swimmer!"
+                    elif bmi < 30:
+                        category = "Overweight"
+                        color = "#F59E0B"
+                        comment = "BMI may not fully reflect swimmer's muscle composition."
+                    else:
+                        category = "Obese"
+                        color = "#EF4444"
+                        comment = "Consider consulting a sports nutritionist."
+                    
+                    st.markdown(f'''
+                    <div style="padding: 12px;">
+                        <p style="font-size: 16px; margin-bottom: 8px;">
+                            Current BMI: <span style="color: {color}; font-weight: bold; font-size: 20px;">{bmi:.1f}</span>
+                            <span style="color: {color}; margin-left: 8px;">({category})</span>
+                        </p>
+                        <p style="color: #A1A1AA; font-size: 14px;">
+                            {comment}
+                        </p>
+                        <p style="color: #71717A; font-size: 12px; margin-top: 8px;">
+                            Note: BMI is a general indicator. For swimmers, body composition (muscle vs fat ratio)
+                            is more relevant than BMI alone. Sunny's height-to-arm-span ratio and lean muscle mass
+                            are key performance factors.
+                        </p>
+                    </div>
+                    ''', unsafe_allow_html=True)
 
 
 # ==================== ANALYTICS PAGE ====================
 elif st.session_state.page == "Performance":
-    st.title("📊 Performance Analytics")
+    st.title("⏱️ Performance Analytics")
     
     events = DataStore.load_swim_events()
     if not events:
@@ -1178,21 +1241,23 @@ elif st.session_state.page == "Performance":
 
 # ==================== NATIONAL STANDARD PAGE ====================
 elif st.session_state.page == "Benchmarks":
-    st.header("Benchmarks")
+    st.title("🏅 Benchmarks")
     st.caption("Chinese Female National Swimming Standards (Effective 2025-01-01)")
     st.caption("Source: Chinese Swimming Association")
 
     tab1, tab2 = st.tabs(["Long Course (50m)", "Short Course (25m)"])
 
     with tab1:
-        st.subheader("LC Standards - Chinese Female")
-        df_lc = pd.DataFrame(LC_STANDARDS)
-        st.dataframe(df_lc, use_container_width=True, hide_index=True)
+        with st.container(border=True):
+            st.subheader("LC Standards - Chinese Female")
+            df_lc = pd.DataFrame(LC_STANDARDS)
+            st.dataframe(df_lc, use_container_width=True, hide_index=True)
 
     with tab2:
-        st.subheader("SC Standards - Chinese Female")
-        df_sc = pd.DataFrame(SC_STANDARDS)
-        st.dataframe(df_sc, use_container_width=True, hide_index=True)
+        with st.container(border=True):
+            st.subheader("SC Standards - Chinese Female")
+            df_sc = pd.DataFrame(SC_STANDARDS)
+            st.dataframe(df_sc, use_container_width=True, hide_index=True)
 
     # Import from OCR Screenshot
     st.divider()
@@ -1286,72 +1351,84 @@ elif st.session_state.page == "Insights":
         st.info("Upload race data to generate insights.")
     else:
         # --- Trend Insights (table format, sorted by improvement % descending) ---
-        st.subheader("Trend Insights")
-        insights = InsightGenerator.generate_trend_insights()
-        # Filter out info-only messages (no structured data)
-        structured_insights = [i for i in insights if "event" in i]
-        if structured_insights:
-            # Sort by improvement percentage descending (biggest improvement first)
-            structured_insights.sort(key=lambda x: x["improvement_pct"], reverse=True)
-            trend_rows = []
-            for ins in structured_insights:
-                trend_rows.append({
-                    "Event": ins["event"],
-                    "Improvement %": f"{ins['improvement_pct']:+.1f}%",
-                    "From": ins["from_time"],
-                    "From Date": ins["from_date"],
-                    "To": ins["to_time"],
-                    "To Date": ins["to_date"],
-                })
-            trend_df = pd.DataFrame(trend_rows)
-            st.dataframe(trend_df, use_container_width=True, hide_index=True)
-        else:
-            for insight in insights:
-                icon = {"positive": "🟢", "warning": "🟡", "neutral": "🔵", "info": "ℹ️"}.get(insight["type"], "ℹ️")
-                st.markdown(f"{icon} {insight['message']}")
-
-        st.markdown("---")
+        with st.container(border=True):
+            st.subheader("Trend Insights")
+            insights = InsightGenerator.generate_trend_insights()
+            # Filter out info-only messages (no structured data)
+            structured_insights = [i for i in insights if "event" in i]
+            if structured_insights:
+                # Sort by improvement percentage descending (biggest improvement first)
+                structured_insights.sort(key=lambda x: x["improvement_pct"], reverse=True)
+                trend_rows = []
+                for ins in structured_insights:
+                    trend_rows.append({
+                        "Event": ins["event"],
+                        "Improvement %": f"{ins['improvement_pct']:+.1f}%",
+                        "From": ins["from_time"],
+                        "From Date": ins["from_date"],
+                        "To": ins["to_time"],
+                        "To Date": ins["to_date"],
+                    })
+                trend_df = pd.DataFrame(trend_rows)
+                st.dataframe(trend_df, use_container_width=True, hide_index=True)
+            else:
+                for insight in insights:
+                    icon = {"positive": "🟢", "warning": "🟡", "neutral": "🔵", "info": "ℹ️"}.get(insight["type"], "ℹ️")
+                    st.markdown(f"{icon} {insight['message']}")
 
         # --- Strengths & Weaknesses (table format) ---
-        st.subheader("Strengths & Weaknesses")
-        sw = InsightGenerator.identify_strengths_weaknesses()
-        if "error" not in sw:
-            # Summary table: Strongest Stroke and Focus Area
-            summary_rows = [
-                {"Metric": "💪 Strongest Stroke", "Value": (sw.get('strongest') or 'N/A').title()},
-                {"Metric": "🎯 Focus Area", "Value": (sw.get('weakest') or 'N/A').title()},
-            ]
-            st.table(pd.DataFrame(summary_rows))
+        with st.container(border=True):
+            st.subheader("Strengths & Weaknesses")
+            sw = InsightGenerator.identify_strengths_weaknesses()
+            if "error" not in sw:
+                # Summary table: Strongest Stroke and Focus Area
+                summary_rows = [
+                    {"Metric": "💪 Strongest Stroke", "Value": (sw.get('strongest') or 'N/A').title()},
+                    {"Metric": "🎯 Focus Area", "Value": (sw.get('weakest') or 'N/A').title()},
+                ]
+                st.table(pd.DataFrame(summary_rows))
 
-            # Pace Analysis table
-            st.markdown("**Pace Analysis**")
-            pace_rows = [
-                {"Stroke": stroke.title(), "Pace (sec/m)": pace}
-                for stroke, pace in sw.get("stroke_paces", {}).items()
-            ]
-            if pace_rows:
-                st.dataframe(pd.DataFrame(pace_rows), use_container_width=True, hide_index=True)
-        
-        st.markdown("---")
-        
-        st.subheader("Potential Assessment")
-        assessment = InsightGenerator.assess_potential()
-        if "error" not in assessment:
-            cols = st.columns(3)
-            cols[0].metric("Total Races", assessment["total_races"])
-            cols[1].metric("Positive Trends", assessment["positive_trends"])
-            cols[2].metric("Trajectory", assessment["trajectory"])
-            
-            st.markdown(f"**Consistency:** {assessment['consistency']}")
-            st.info(f"📋 {assessment['recommendation']}")
-        
-        st.markdown("---")
-        
-        st.subheader("Training Suggestions")
-        suggestions = InsightGenerator.get_training_suggestions()
-        for s in suggestions:
-            priority_emoji = "🔴" if s["priority"] == "high" else "🟡"
-            st.markdown(f"{priority_emoji} **{s['focus'].title()}**: {s['drills']}")
+                # Pace Analysis table
+                st.markdown("**Pace Analysis**")
+                pace_rows = [
+                    {"Stroke": stroke.title(), "Pace (sec/m)": pace}
+                    for stroke, pace in sw.get("stroke_paces", {}).items()
+                ]
+                if pace_rows:
+                    st.dataframe(pd.DataFrame(pace_rows), use_container_width=True, hide_index=True)
+
+        # --- Potential Assessment ---
+        with st.container(border=True):
+            st.subheader("Potential Assessment")
+            assessment = InsightGenerator.assess_potential()
+            if "error" not in assessment:
+                cols = st.columns(3)
+                kpi_items = [
+                    ("Total Races", assessment["total_races"]),
+                    ("Positive Trends", assessment["positive_trends"]),
+                    ("Trajectory", assessment["trajectory"]),
+                ]
+                for col, (label, value) in zip(cols, kpi_items):
+                    col.markdown(f"""
+<div style="background: linear-gradient(135deg, #18181B 0%, #27272A 100%); 
+            padding: 20px; border-radius: 12px; border-left: 4px solid #06B6D4; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="color: #A1A1AA; font-size: 12px; text-transform: uppercase;">{label}</div>
+    <div style="color: #06B6D4; font-size: 30px; font-weight: bold;">{value}</div>
+</div>
+""", unsafe_allow_html=True)
+
+                st.markdown("")
+                st.markdown(f'<span style="color: #06B6D4; font-size: 14px;">**Consistency:** {assessment["consistency"]}</span>', unsafe_allow_html=True)
+                st.info(f"📋 {assessment['recommendation']}")
+
+        # --- Training Suggestions ---
+        with st.container(border=True):
+            st.subheader("Training Suggestions")
+            suggestions = InsightGenerator.get_training_suggestions()
+            for s in suggestions:
+                priority_emoji = "🔴" if s["priority"] == "high" else "🟡"
+                st.markdown(f"{priority_emoji} **{s['focus'].title()}**: {s['drills']}")
 
 
 # ==================== Q&A PAGE ====================
