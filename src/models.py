@@ -19,7 +19,7 @@ class SwimEvent:
     age_group: str = ""  # e.g., "8 & Under", "9-10", "11-12"
     source_screenshot: str = ""  # path to source screenshot
     heat_lane: str = ""  # e.g., "H3 L4"
-    swimmer_name: str = "Sunny"
+    swimmer_name: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)

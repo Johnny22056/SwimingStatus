@@ -256,3 +256,64 @@ CRITICAL RULES:
         if not splits_text:
             return []
         return [s.strip() for s in splits_text.split(",") if s.strip()]
+
+    @staticmethod
+    def _standards_prompt() -> str:
+        return """Extract all swimming time standards from this image into a structured format.
+For each event, provide: Event name (in English, e.g. "50m Freestyle"), and times for each level.
+The columns are: International Master (国际级运动健将), National Master (运动健将), Level 1 (一级运动员), Level 2 (二级运动员).
+There may be separate columns for 50m pool (Long Course) and 25m pool (Short Course).
+
+Return as JSON with this structure:
+{
+  "lc_standards": [{"Event": "50m Freestyle", "International Master": "24.70", "National Master": "25.85", "Level 1": "27.20", "Level 2": "31.50"}, ...],
+  "sc_standards": [{"Event": "50m Freestyle", "International Master": "24.44", "National Master": "25.00", "Level 1": "26.40", "Level 2": "30.50"}, ...]
+}
+
+Use English event names: "50m Freestyle", "100m Freestyle", "200m Freestyle", "400m Freestyle", "800m Freestyle", "1500m Freestyle", "50m Backstroke", "100m Backstroke", "200m Backstroke", "50m Breaststroke", "100m Breaststroke", "200m Breaststroke", "50m Butterfly", "100m Butterfly", "200m Butterfly", "100m IM", "200m IM", "400m IM".
+Format times as SS.ss or M:SS.ss or MM:SS.ss as appropriate.
+Return ONLY the JSON, no other text."""
+
+    def extract_standards_from_bytes(self, image_bytes: bytes, file_ext: str) -> Tuple[bool, Dict[str, Any], str]:
+        """Extract standards table from a raw image-bytes upload.
+
+        Returns:
+            (success, parsed_dict, message). parsed_dict has keys 'lc_standards'
+            and/or 'sc_standards' on success, or {'raw_response': ...} when the
+            model returned text that didn't parse as JSON.
+        """
+        if not ALIBABA_CLOUD_API_KEY or self.client is None:
+            return False, {}, "Alibaba Cloud API key not configured."
+
+        ext = file_ext.lower().lstrip(".")
+        mime_type = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext or 'jpeg'}"
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": self._standards_prompt()},
+                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}},
+                    ],
+                }],
+            )
+        except (APIConnectionError, AuthenticationError, RateLimitError, OpenAIError) as e:
+            logger.error("Standards extraction failed: %s: %s", type(e).__name__, e)
+            return False, {}, f"{type(e).__name__}: {e}"
+
+        text = response.choices[0].message.content or ""
+        # Strip markdown code fences
+        if "```json" in text:
+            text = text.split("```json", 1)[1].split("```", 1)[0]
+        elif "```" in text:
+            text = text.split("```", 1)[1].split("```", 1)[0]
+        try:
+            parsed = json.loads(text.strip())
+        except json.JSONDecodeError as e:
+            return False, {"raw_response": text}, f"Could not parse JSON: {e}"
+        if not isinstance(parsed, dict) or ("lc_standards" not in parsed and "sc_standards" not in parsed):
+            return False, {"raw_response": text}, "Response did not contain lc_standards or sc_standards."
+        return True, parsed, "OK"

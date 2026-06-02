@@ -1,4 +1,5 @@
 """Performance analytics and visualization utilities."""
+import html
 import logging
 from typing import List, Dict, Any, Tuple
 from collections import defaultdict
@@ -175,36 +176,24 @@ class PerformanceAnalytics:
         events = DataStore.load_swim_events()
         generation_date = _dt.now().strftime("%Y-%m-%d %H:%M")
 
-        # --- Build PB tables ---
+        # --- Build PB tables (reuses canonical get_personal_bests) ---
+        pb_df = cls.get_personal_bests()
+
         def _pb_table_rows(course_filter: str) -> str:
-            """Return HTML <tr> rows for personal bests of a given course."""
-            pb_dict: Dict[tuple, dict] = {}
-            for e in events:
-                if not e.time or not e.stroke or not e.distance:
-                    continue
-                if e.course != course_filter:
-                    continue
-                time_sec = time_to_seconds(e.time)
-                if time_sec <= 0:
-                    continue
-                key = (e.stroke, e.distance)
-                if key not in pb_dict or time_sec < pb_dict[key]["time_seconds"]:
-                    pb_dict[key] = {
-                        "stroke": e.stroke,
-                        "distance": e.distance,
-                        "time": e.time,
-                        "time_seconds": time_sec,
-                        "date": e.date,
-                        "meet_name": e.meet_name,
-                    }
+            if pb_df.empty:
+                return ""
+            subset = pb_df[pb_df["course"] == course_filter]
+            if subset.empty:
+                return ""
+            sorted_pbs = subset.sort_values(["stroke", "distance"])
             rows = []
-            for pb in sorted(pb_dict.values(), key=lambda x: (x["stroke"], x["distance"])):
+            for _, pb in sorted_pbs.iterrows():
                 rows.append(
-                    f"<tr><td>{pb['stroke'].title()}</td>"
-                    f"<td>{pb['distance']}m</td>"
-                    f"<td>{pb['time']}</td>"
-                    f"<td>{pb['date']}</td>"
-                    f"<td>{pb['meet_name']}</td></tr>"
+                    f"<tr><td>{html.escape(str(pb['stroke']).title())}</td>"
+                    f"<td>{int(pb['distance'])}m</td>"
+                    f"<td>{html.escape(str(pb['time']))}</td>"
+                    f"<td>{html.escape(str(pb['date']))}</td>"
+                    f"<td>{html.escape(str(pb['meet_name']))}</td></tr>"
                 )
             return "\n".join(rows)
 
@@ -216,7 +205,7 @@ class PerformanceAnalytics:
         chart_html_parts: list = []
         if dev_data:
             for (stroke, distance), records in sorted(dev_data.items()):
-                label = f"{stroke.title()} {distance}m"
+                label = f"{str(stroke).title()} {int(distance)}m"
                 dates = [r["date"] for r in records]
                 times_sec = [r["time_seconds"] for r in records]
                 time_labels = [r["time"] for r in records]
@@ -248,7 +237,7 @@ class PerformanceAnalytics:
         charts_section = "\n".join(chart_html_parts) if chart_html_parts else "<p><em>No time development data available yet.</em></p>"
 
         # --- Assemble HTML ---
-        html = f"""<!DOCTYPE html>
+        html_doc = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -292,7 +281,7 @@ class PerformanceAnalytics:
 </div>
 </body>
 </html>"""
-        return html
+        return html_doc
 
     @classmethod
     def get_dashboard_summary(cls) -> Dict[str, Any]:

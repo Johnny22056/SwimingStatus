@@ -17,10 +17,13 @@ data/extracted/*
 !data/extracted/.gitkeep
 *.json
 *.csv
+*.bak
+*.bak[0-9]*
 
 # IDE
 .vscode/
 .idea/
+.qoder/
 *.swp
 *.swo
 

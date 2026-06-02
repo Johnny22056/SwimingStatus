@@ -3,12 +3,60 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from src.models import SwimEvent, BodyMetrics
 from src.config import SWIM_EVENTS_FILE, BODY_METRICS_FILE, SCREENSHOT_INDEX_FILE, apply_course_override
 
 logger = logging.getLogger(__name__)
+
+# Number of rotated backups to keep
+BACKUP_KEEP = 3
+
+
+def _rotate_backups(path: Path, keep: int = BACKUP_KEEP) -> None:
+    """Rotate `.bak.1` … `.bak.N` so the newest snapshot is `.bak.1`."""
+    if not path.exists():
+        return
+    # Drop the oldest, shift the rest
+    oldest = path.with_suffix(path.suffix + f".bak.{keep}")
+    if oldest.exists():
+        try:
+            oldest.unlink()
+        except OSError as e:
+            logger.warning("Failed to remove oldest backup %s: [%s] %s", oldest, type(e).__name__, e)
+    for n in range(keep - 1, 0, -1):
+        src = path.with_suffix(path.suffix + f".bak.{n}")
+        dst = path.with_suffix(path.suffix + f".bak.{n + 1}")
+        if src.exists():
+            try:
+                src.replace(dst)
+            except OSError as e:
+                logger.warning("Failed to rotate %s -> %s: [%s] %s", src, dst, type(e).__name__, e)
+    new_backup = path.with_suffix(path.suffix + ".bak.1")
+    try:
+        shutil.copy2(path, new_backup)
+    except OSError as e:
+        logger.warning("Failed to write backup %s: [%s] %s", new_backup, type(e).__name__, e)
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    """Write JSON atomically (tempfile in the same dir + os.replace)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 class DataStore:
@@ -27,18 +75,9 @@ class DataStore:
 
     @staticmethod
     def _save_json(path: Path, data: List[Dict[str, Any]]) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # Create backup if file already exists
-        if path.exists():
-            backup_path = path.with_suffix(path.suffix + ".bak")
-            try:
-                shutil.copy2(path, backup_path)
-                logger.debug("Created backup: %s", backup_path)
-            except OSError as e:
-                logger.warning("Failed to create backup %s: [%s] %s", backup_path, type(e).__name__, e)
+        _rotate_backups(path)
         try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            _atomic_write_json(path, data)
             logger.debug("Saved JSON to %s (%d items)", path, len(data))
         except (OSError, TypeError) as e:
             logger.error("Failed to save JSON to %s: [%s] %s", path, type(e).__name__, e)
@@ -58,21 +97,25 @@ class DataStore:
         data = [event.to_dict() for event in events]
         cls._save_json(SWIM_EVENTS_FILE, data)
 
+    @staticmethod
+    def _event_key(event: SwimEvent) -> Tuple[str, str, int, str, str]:
+        return (
+            event.date,
+            event.stroke.lower(),
+            int(event.distance),
+            event.time,
+            event.course.upper(),
+        )
+
     @classmethod
     def _is_duplicate_event(cls, event: SwimEvent, existing_events: List[SwimEvent]) -> bool:
         """Check if event matches an existing record on composite key fields."""
-        for existing in existing_events:
-            if (existing.date == event.date
-                    and existing.stroke.lower() == event.stroke.lower()
-                    and int(existing.distance) == int(event.distance)
-                    and existing.time == event.time
-                    and existing.course.upper() == event.course.upper()):
-                return True
-        return False
+        target = cls._event_key(event)
+        return any(cls._event_key(e) == target for e in existing_events)
 
     @classmethod
     def add_swim_event(cls, event: SwimEvent) -> Tuple[bool, str]:
-        """Add a swim event if it's not a duplicate.
+        """Add a single swim event if it's not a duplicate.
 
         Returns:
             (True, "") if successfully added.
@@ -87,6 +130,33 @@ class DataStore:
         events.append(event)
         cls.save_swim_events(events)
         return (True, "")
+
+    @classmethod
+    def add_swim_events_batch(cls, candidates: List[SwimEvent]) -> Tuple[int, int]:
+        """Add many events in a single load/save cycle.
+
+        Returns:
+            (added_count, duplicate_count). Skips duplicates against existing
+            records *and* against earlier candidates in the same batch.
+        """
+        if not candidates:
+            return (0, 0)
+        events = cls.load_swim_events()
+        seen = {cls._event_key(e) for e in events}
+        added = 0
+        duplicates = 0
+        for cand in candidates:
+            cand.course = apply_course_override(cand.meet_name, cand.course)
+            key = cls._event_key(cand)
+            if key in seen:
+                duplicates += 1
+                continue
+            seen.add(key)
+            events.append(cand)
+            added += 1
+        if added:
+            cls.save_swim_events(events)
+        return (added, duplicates)
 
     # Body Metrics
     @classmethod
@@ -122,18 +192,9 @@ class ScreenshotIndex:
 
     @classmethod
     def save(cls, index: Dict[str, Any]) -> None:
-        SCREENSHOT_INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
-        # Create backup if file already exists
-        if SCREENSHOT_INDEX_FILE.exists():
-            backup_path = SCREENSHOT_INDEX_FILE.with_suffix(SCREENSHOT_INDEX_FILE.suffix + ".bak")
-            try:
-                shutil.copy2(SCREENSHOT_INDEX_FILE, backup_path)
-                logger.debug("Created backup: %s", backup_path)
-            except OSError as e:
-                logger.warning("Failed to create backup %s: [%s] %s", backup_path, type(e).__name__, e)
+        _rotate_backups(SCREENSHOT_INDEX_FILE)
         try:
-            with open(SCREENSHOT_INDEX_FILE, "w", encoding="utf-8") as f:
-                json.dump(index, f, indent=2, ensure_ascii=False)
+            _atomic_write_json(SCREENSHOT_INDEX_FILE, index)
             logger.debug("Saved screenshot index (%d entries)", len(index.get("screenshots", [])))
         except (OSError, TypeError) as e:
             logger.error("Failed to save screenshot index to %s: [%s] %s", SCREENSHOT_INDEX_FILE, type(e).__name__, e)
@@ -163,3 +224,11 @@ class ScreenshotIndex:
         index["screenshots"] = [s for s in index["screenshots"] if s.get("path") != path]
         cls.save(index)
         return len(index["screenshots"]) < original_len
+
+    @classmethod
+    def has_checksum(cls, checksum: str, exclude_path: Optional[str] = None) -> bool:
+        """True if an entry with this checksum exists (optionally ignoring one path)."""
+        for s in cls.list_all():
+            if s.get("checksum") == checksum and s.get("path") != exclude_path:
+                return True
+        return False

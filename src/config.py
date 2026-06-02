@@ -5,7 +5,9 @@ used in type annotations throughout the codebase.
 """
 import logging
 import os
+from datetime import date
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -32,6 +34,23 @@ ALIBABA_CLOUD_API_KEY = os.getenv("ALIBABA_CLOUD_API_KEY", "").strip()
 ALIBABA_CLOUD_BASE_URL = os.getenv("ALIBABA_CLOUD_BASE_URL", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1").strip()
 QWEN_MODEL_NAME = os.getenv("QWEN_MODEL_NAME", "qwen-vl-max").strip()
 QWEN_TEXT_MODEL_NAME = os.getenv("QWEN_TEXT_MODEL_NAME", "qwen-max").strip()
+
+# Swimmer identity — keep PII out of source. Set in .env.
+SWIMMER_NAME = os.getenv("SWIMMER_NAME", "Swimmer").strip() or "Swimmer"
+
+
+def _parse_dob(value: str) -> Optional[date]:
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        logger.warning("SWIMMER_DOB '%s' is not a valid ISO date (YYYY-MM-DD); age display disabled.", value)
+        return None
+
+
+SWIMMER_DOB: Optional[date] = _parse_dob(os.getenv("SWIMMER_DOB", ""))
 
 # Startup validation
 if not ALIBABA_CLOUD_API_KEY:
