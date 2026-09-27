@@ -8,7 +8,7 @@ A data-driven swimming performance analysis platform for tracking, analyzing, an
 - **Performance** — Personal Bests (LC/SC), Time Development curves per stroke-distance with smooth splines, Level 1 / National / International Master reference lines, downloadable HTML report.
 - **Insights** — Trend tables, strengths/weaknesses, potential assessment, training suggestions.
 - **AI Coach** — Interactive Q&A about the swimmer's data via Qwen text model.
-- **Data Import** — Single screenshot upload with OCR extraction, batch folder import (recursive), and Excel import with column mapping.
+- **Data Import** — Single screenshot upload with OCR extraction, batch folder import (recursive), and Excel/CSV import with column mapping.
 - **Race Log** — Sortable/filterable table of all swim events with Age Group, calculated Age, CSV download.
 - **Body Metrics** — Track height/weight/BMI measurements over time.
 

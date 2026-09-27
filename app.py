@@ -428,7 +428,7 @@ if st.session_state.page == "Data Import":
     
     st.markdown("---")
     
-    tab1, tab2, tab3 = st.tabs(["Single Screenshot", "Batch Import", "Import from Excel"])
+    tab1, tab2, tab3 = st.tabs(["Single Screenshot", "Batch Import", "Import from Excel/CSV"])
     
     with tab1:
         st.subheader("Upload New Screenshot")
@@ -786,14 +786,17 @@ if st.session_state.page == "Data Import":
                 st.error("Selected path is not a valid directory")
 
     with tab3:
-        st.subheader("Import from Excel")
-        st.info("Upload an Excel file (.xlsx) with swim event records to import them directly.")
-        
-        uploaded_excel = st.file_uploader("Choose Excel file", type=["xlsx", "xls"], key="excel_uploader")
-        
-        if uploaded_excel:
+        st.subheader("Import from File")
+        st.info("Upload an Excel (.xlsx, .xls) or CSV (.csv) file with swim event records to import them directly.")
+
+        uploaded_data_file = st.file_uploader("Choose Excel or CSV file", type=["xlsx", "xls", "csv"], key="excel_uploader")
+
+        if uploaded_data_file:
             try:
-                df = pd.read_excel(uploaded_excel)
+                if uploaded_data_file.name.lower().endswith(".csv"):
+                    df = pd.read_csv(uploaded_data_file)
+                else:
+                    df = pd.read_excel(uploaded_data_file)
                 st.write(f"Found {len(df)} rows")
                 st.dataframe(df.head(10), use_container_width=True)
                 
@@ -802,8 +805,8 @@ if st.session_state.page == "Data Import":
                 # Optional: swimmer_name, age_group, rank, course, round, splits
                 
                 st.subheader("Column Mapping")
-                st.caption("Map your Excel columns to swim event fields:")
-                
+                st.caption("Map your file's columns to swim event fields:")
+
                 excel_cols = ["(not mapped)"] + list(df.columns)
                 
                 col1, col2 = st.columns(2)
@@ -847,7 +850,7 @@ if st.session_state.page == "Data Import":
                                 )
                                 candidates.append(event)
                             except (ValueError, TypeError, KeyError) as e:
-                                logger.warning("Excel row skipped: [%s] %s", type(e).__name__, e)
+                                logger.warning("Import row skipped: [%s] %s", type(e).__name__, e)
                                 error_count += 1
 
                         success_count, duplicate_count = DataStore.add_swim_events_batch(candidates)
@@ -863,7 +866,7 @@ if st.session_state.page == "Data Import":
                             st.session_state.upload_failed_count += error_count
                             
             except Exception as e:
-                st.error(f"Error reading Excel file: {str(e)}")
+                st.error(f"Error reading file: {str(e)}")
 
 
 # ==================== RECORDS PAGE ====================
