@@ -86,9 +86,21 @@ def seconds_to_time(total_seconds: float) -> str:
         return f"{total_seconds:.2f}"
 
 
+def parse_rank(value) -> int:
+    """Parse a rank cell, returning 0 when the swim has no placing.
+
+    Result exports write '-', 'DQ', 'DNS' and similar for swims that didn't
+    place, so a non-numeric rank is ordinary data, not a malformed row.
+    """
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return 0
+
+
 def validate_required_fields(data: dict, required: list) -> Tuple[bool, list]:
     """Validate that all required fields are present and non-empty.
-    
+
     Returns:
         Tuple of (is_valid, missing_fields)
     """

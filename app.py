@@ -29,6 +29,7 @@ from src.standards import LC_STANDARDS, SC_STANDARDS
 from src.storage import DataStore
 from src.theme import get_theme
 from src.validation import (
+    parse_rank,
     time_to_seconds,
     validate_body_metrics,
     validate_field_types,
@@ -844,7 +845,7 @@ if st.session_state.page == "Data Import":
                                     time=str(row[time_col]).strip(),
                                     swimmer_name=str(row[swimmer_col]).strip() if swimmer_col != "(not mapped)" else SWIMMER_NAME,
                                     age_group=str(row[age_group_col]).strip() if age_group_col != "(not mapped)" else "",
-                                    rank=int(float(row[rank_col])) if rank_col != "(not mapped)" and pd.notna(row[rank_col]) else 0,
+                                    rank=parse_rank(row[rank_col]) if rank_col != "(not mapped)" else 0,
                                     course=str(row[course_col]).strip().upper() if course_col != "(not mapped)" else "",
                                     round=str(row[round_col]).strip() if round_col != "(not mapped)" else "",
                                 )
@@ -1487,8 +1488,7 @@ elif st.session_state.page == "Benchmarks":
         if st.button("Extract Standards via OCR", type="primary"):
             with st.spinner("Extracting standards from screenshot..."):
                 ocr = OCRService()
-                file_ext = uploaded_std.name.rsplit(".", 1)[-1] if "." in uploaded_std.name else "jpg"
-                ok, extracted, msg = ocr.extract_standards_from_bytes(uploaded_std.read(), file_ext)
+                ok, extracted, msg = ocr.extract_standards_from_bytes(uploaded_std.read())
 
             if ok:
                 lc = extracted.get("lc_standards", [])

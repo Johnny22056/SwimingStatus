@@ -2,6 +2,7 @@
 import pytest
 
 from src.validation import (
+    parse_rank,
     seconds_to_time,
     time_to_seconds,
     validate_body_metrics,
@@ -69,6 +70,16 @@ class TestSecondsToTime:
         # The MM:SS.ss format must roundtrip through both directions
         for raw in ["1:23.45", "59.99", "5:00.00"]:
             assert seconds_to_time(time_to_seconds(raw)) in (raw, raw.zfill(8))
+
+
+class TestParseRank:
+    @pytest.mark.parametrize("value,expected", [(1, 1), ("3", 3), (7.0, 7), ("12", 12)])
+    def test_parses_placings(self, value, expected):
+        assert parse_rank(value) == expected
+
+    @pytest.mark.parametrize("value", ["-", "DQ", "DNS", "", None, float("nan")])
+    def test_unplaced_becomes_zero(self, value):
+        assert parse_rank(value) == 0
 
 
 class TestValidateRequiredFields:

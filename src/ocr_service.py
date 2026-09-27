@@ -1,10 +1,11 @@
 """OCR data extraction using Alibaba Cloud Model Studio Service."""
 import base64
+import io
 import json
 import logging
-from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 from openai import OpenAI, APIConnectionError, AuthenticationError, RateLimitError, OpenAIError
+from PIL import Image
 
 from src.base_service import AlibabaPlatformService, ServiceInitError
 from src.config import ALIBABA_CLOUD_API_KEY, QWEN_MODEL_NAME
@@ -27,37 +28,17 @@ class OCRService(AlibabaPlatformService):
             self.client = None
 
     @staticmethod
-    def _encode_image(image_path: str) -> str:
-        """Encode an image file to a base64 string.
+    def _to_data_url(image_bytes: bytes) -> str:
+        """Re-encode an image to an 8-bit RGB PNG data URL for the vision model.
 
-        Args:
-            image_path: Absolute or relative path to the image file.
-
-        Returns:
-            Base64-encoded string of the image contents.
+        Model Studio's decoder clips 16-bit PNG samples into 8-bit range, which
+        saturates every pixel to white — iPhone screenshots are 16-bit, so they
+        reach the model blank unless downconverted here.
         """
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-
-    @staticmethod
-    def _get_image_mime_type(image_path: str) -> str:
-        """Detect MIME type from file extension.
-
-        Args:
-            image_path: Path to the image file.
-
-        Returns:
-            MIME type string (e.g., 'image/png'); defaults to 'image/jpeg'.
-        """
-        ext = Path(image_path).suffix.lower()
-        mime_types = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".webp": "image/webp",
-        }
-        return mime_types.get(ext, "image/jpeg")
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            buffer = io.BytesIO()
+            img.convert("RGB").save(buffer, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     @staticmethod
     def _get_extraction_prompt() -> str:
@@ -131,9 +112,9 @@ CRITICAL RULES:
             return False, {}, "Alibaba Cloud API key not configured. Set ALIBABA_CLOUD_API_KEY environment variable."
         
         try:
-            base64_image = self._encode_image(image_path)
-            mime_type = self._get_image_mime_type(image_path)
-            
+            with open(image_path, "rb") as image_file:
+                data_url = self._to_data_url(image_file.read())
+
             logger.debug("Calling API with model '%s' for image: %s", self.model, image_path)
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -147,9 +128,7 @@ CRITICAL RULES:
                         "content": [
                             {
                                 "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:{mime_type};base64,{base64_image}"
-                                }
+                                "image_url": {"url": data_url}
                             },
                             {
                                 "type": "text",
@@ -274,7 +253,7 @@ Use English event names: "50m Freestyle", "100m Freestyle", "200m Freestyle", "4
 Format times as SS.ss or M:SS.ss or MM:SS.ss as appropriate.
 Return ONLY the JSON, no other text."""
 
-    def extract_standards_from_bytes(self, image_bytes: bytes, file_ext: str) -> Tuple[bool, Dict[str, Any], str]:
+    def extract_standards_from_bytes(self, image_bytes: bytes) -> Tuple[bool, Dict[str, Any], str]:
         """Extract standards table from a raw image-bytes upload.
 
         Returns:
@@ -285,9 +264,7 @@ Return ONLY the JSON, no other text."""
         if not ALIBABA_CLOUD_API_KEY or self.client is None:
             return False, {}, "Alibaba Cloud API key not configured."
 
-        ext = file_ext.lower().lstrip(".")
-        mime_type = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext or 'jpeg'}"
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        data_url = self._to_data_url(image_bytes)
 
         try:
             response = self.client.chat.completions.create(
@@ -296,7 +273,7 @@ Return ONLY the JSON, no other text."""
                     "role": "user",
                     "content": [
                         {"type": "text", "text": self._standards_prompt()},
-                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}},
+                        {"type": "image_url", "image_url": {"url": data_url}},
                     ],
                 }],
             )
